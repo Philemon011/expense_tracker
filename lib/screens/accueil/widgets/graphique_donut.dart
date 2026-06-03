@@ -45,27 +45,28 @@ class _GraphiqueDonutState extends State<GraphiqueDonut> {
         ..sort((a, b) => b.value.compareTo(a.value));
 
       // Pas de données — afficher état vide
-      if (donnees.isEmpty) {
-        return Container(
-          padding: AppSpacing.paddingCard,
-          decoration: BoxDecoration(
-            color: AppColors.card(isDark),
-            borderRadius: AppSpacing.borderRadiusCard,
-            boxShadow: AppSpacing.cardShadow(isDark),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _TitreSection(isDark: isDark),
-              const SizedBox(height: AppSpacing.xxl),
-               SizedBox(
-                height: 150,
-                child: EmptyState.statistiques(),
-              ),
-            ],
-          ),
-        );
-      }
+if (donnees.isEmpty) {
+  return Container(
+    padding: AppSpacing.paddingCard,
+    decoration: BoxDecoration(
+      color: AppColors.card(isDark),
+      borderRadius: AppSpacing.borderRadiusCard,
+      boxShadow: AppSpacing.cardShadow(isDark),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _TitreSection(isDark: isDark),
+        const SizedBox(height: AppSpacing.lg),
+        // Remplacer SizedBox fixe par un padding simple
+         Padding(
+          padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+          child: EmptyState.statistiques(),
+        ),
+      ],
+    ),
+  );
+}
 
       // Couleurs pour les sections du donut
       final couleurs = _genererCouleurs(donnees.length, ctrl, isDark);

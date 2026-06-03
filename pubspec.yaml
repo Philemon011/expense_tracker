@@ -20,12 +20,15 @@ dependencies:
   # ── Utilitaires ──────────────────────────────────────────────
   path_provider: ^2.1.2        # Accès au répertoire local (requis par Hive)
   uuid: ^4.3.3                 # Génération d'identifiants uniques (UUIDs)
-  intl: ^0.19.0                # Formatage dates et monnaie en français
+  intl: 0.20.2                # Formatage dates et monnaie en français
 
   # ── Interface & animations ───────────────────────────────────
   flutter_animate: ^4.5.0      # Animations fluides (fade, slide, scale...)
   fl_chart: ^0.68.0            # Graphiques : donut, barres, courbes
   google_fonts: ^6.2.1         # Police Inter (typographie premium)
+
+  flutter_localizations:
+    sdk: flutter          # Delegates officiels Flutter (FR, EN, etc.)
 
 dev_dependencies:
   flutter_test:

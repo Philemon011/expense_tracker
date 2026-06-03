@@ -66,55 +66,40 @@ class OperationController extends GetxController {
   String get devise => _devise.value;
   String get nomUtilisateur => _nomUtilisateur.value;
 
-  // ── Getters calculés ───────────────────────────────────────────
+// ── Variables observables calculées ───────────────────────────
 
-  /// Solde total de tous les comptes
-  double get soldeTotal => _compteService.calculerSoldeTotal();
+/// Solde total de tous les comptes
+final _soldeTotal = 0.0.obs;
+double get soldeTotal => _soldeTotal.value;
 
-  /// Total des entrées du mois sélectionné
-  double get totalEntreesMois => _operationService.calculerTotalEntrees(
-        mois: _moisSelectionne.value,
-        annee: _anneeSelectionnee.value,
-      );
+/// Total des entrées du mois sélectionné
+final _totalEntreesMois = 0.0.obs;
+double get totalEntreesMois => _totalEntreesMois.value;
 
-  /// Total des sorties du mois sélectionné
-  double get totalSortiesMois => _operationService.calculerTotalSorties(
-        mois: _moisSelectionne.value,
-        annee: _anneeSelectionnee.value,
-      );
+/// Total des sorties du mois sélectionné
+final _totalSortiesMois = 0.0.obs;
+double get totalSortiesMois => _totalSortiesMois.value;
 
-  /// 5 dernières opérations pour le dashboard
-  List<OperationModel> get operationsRecentes =>
-      _operationService.dernieresOperations(limite: 5);
+/// 5 dernières opérations pour le dashboard
+final _operationsRecentes = <OperationModel>[].obs;
+List<OperationModel> get operationsRecentes => _operationsRecentes;
 
-  /// Opérations du mois sélectionné
-  List<OperationModel> get operationsDuMois =>
-      _operationService.operationsParMois(
-        mois: _moisSelectionne.value,
-        annee: _anneeSelectionnee.value,
-      );
+/// Opérations du mois sélectionné
+final _operationsDuMois = <OperationModel>[].obs;
+List<OperationModel> get operationsDuMois => _operationsDuMois;
 
-  /// Totaux par catégorie pour le mois sélectionné
-  /// Utilisé pour le graphique donut
-  Map<String, double> get totauxParCategorie =>
-      _operationService.totauxParCategorie(
-        mois: _moisSelectionne.value,
-        annee: _anneeSelectionnee.value,
-      );
+/// Totaux par catégorie — graphique donut
+final _totauxParCategorie = <String, double>{}.obs;
+Map<String, double> get totauxParCategorie => _totauxParCategorie;
 
-  /// Totaux par mois pour l'année sélectionnée
-  /// Utilisé pour le graphique en barres
-  Map<int, double> get totauxEntreesParMois =>
-      _operationService.totauxParMoisAnnee(
-        annee: _anneeSelectionnee.value,
-        type: TypeOperation.entree,
-      );
+/// Totaux entrées par mois — graphique barres
+final _totauxEntreesParMois = <int, double>{}.obs;
+Map<int, double> get totauxEntreesParMois => _totauxEntreesParMois;
 
-  Map<int, double> get totauxSortiesParMois =>
-      _operationService.totauxParMoisAnnee(
-        annee: _anneeSelectionnee.value,
-        type: TypeOperation.sortie,
-      );
+/// Totaux sorties par mois — graphique barres
+final _totauxSortiesParMois = <int, double>{}.obs;
+Map<int, double> get totauxSortiesParMois => _totauxSortiesParMois;
+
 
   // ── Cycle de vie ───────────────────────────────────────────────
 
@@ -146,10 +131,53 @@ class OperationController extends GetxController {
     }
   }
 
-  /// Charge les opérations depuis Hive
-  Future<void> _chargerOperations() async {
-    _operations.value = _operationService.toutesLesOperations();
-  }
+  /// Charge les opérations depuis Hive et recalcule tout
+Future<void> _chargerOperations() async {
+  _operations.value = _operationService.toutesLesOperations();
+  // Recalculer toutes les valeurs dérivées
+  _recalculer();
+}
+  /// Recalcule toutes les valeurs dérivées.
+///
+/// Appelée après chaque modification des opérations
+/// pour mettre à jour tous les widgets Obx.
+void _recalculer() {
+  final mois = _moisSelectionne.value;
+  final annee = _anneeSelectionnee.value;
+
+  // Recalculer les totaux
+  _soldeTotal.value = _compteService.calculerSoldeTotal();
+  _totalEntreesMois.value = _operationService.calculerTotalEntrees(
+    mois: mois,
+    annee: annee,
+  );
+  _totalSortiesMois.value = _operationService.calculerTotalSorties(
+    mois: mois,
+    annee: annee,
+  );
+
+  // Recalculer les listes
+  _operationsRecentes.value =
+      _operationService.dernieresOperations(limite: 5);
+  _operationsDuMois.value = _operationService.operationsParMois(
+    mois: mois,
+    annee: annee,
+  );
+
+  // Recalculer les maps pour les graphiques
+  _totauxParCategorie.value = _operationService.totauxParCategorie(
+    mois: mois,
+    annee: annee,
+  );
+  _totauxEntreesParMois.value = _operationService.totauxParMoisAnnee(
+    annee: annee,
+    type: TypeOperation.entree,
+  );
+  _totauxSortiesParMois.value = _operationService.totauxParMoisAnnee(
+    annee: annee,
+    type: TypeOperation.sortie,
+  );
+}
 
   /// Charge les catégories depuis Hive
   Future<void> _chargerCategories() async {
@@ -241,41 +269,39 @@ class OperationController extends GetxController {
   // ── Filtres ────────────────────────────────────────────────────
 
   /// Change le mois sélectionné pour les filtres.
-  void changerMois(int mois, int annee) {
-    _moisSelectionne.value = mois;
-    _anneeSelectionnee.value = annee;
-    update();
+void changerMois(int mois, int annee) {
+  _moisSelectionne.value = mois;
+  _anneeSelectionnee.value = annee;
+  _recalculer(); // ← Ajouter
+}
+
+/// Passe au mois précédent.
+void moisPrecedent() {
+  if (_moisSelectionne.value == 1) {
+    _moisSelectionne.value = 12;
+    _anneeSelectionnee.value--;
+  } else {
+    _moisSelectionne.value--;
   }
+  _recalculer(); // ← Ajouter
+}
 
-  /// Passe au mois précédent.
-  void moisPrecedent() {
-    if (_moisSelectionne.value == 1) {
-      _moisSelectionne.value = 12;
-      _anneeSelectionnee.value--;
-    } else {
-      _moisSelectionne.value--;
-    }
-    update();
+/// Passe au mois suivant.
+void moisSuivant() {
+  final now = DateTime.now();
+  final estMoisCourant = _moisSelectionne.value == now.month &&
+      _anneeSelectionnee.value == now.year;
+
+  if (estMoisCourant) return;
+
+  if (_moisSelectionne.value == 12) {
+    _moisSelectionne.value = 1;
+    _anneeSelectionnee.value++;
+  } else {
+    _moisSelectionne.value++;
   }
-
-  /// Passe au mois suivant.
-  /// Ne permet pas d'aller au-delà du mois courant.
-  void moisSuivant() {
-    final now = DateTime.now();
-    final estMoisCourant = _moisSelectionne.value == now.month &&
-        _anneeSelectionnee.value == now.year;
-
-    if (estMoisCourant) return;
-
-    if (_moisSelectionne.value == 12) {
-      _moisSelectionne.value = 1;
-      _anneeSelectionnee.value++;
-    } else {
-      _moisSelectionne.value++;
-    }
-    update();
-  }
-
+  _recalculer(); // ← Ajouter
+}
   /// Vrai si le mois sélectionné est le mois courant
   bool get estMoisCourant {
     final now = DateTime.now();
