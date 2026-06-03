@@ -1,0 +1,45 @@
+name: expense_tracker
+description: "Gestionnaire de finances personnelles — suivi des entrées et sorties"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── Gestion d'état & navigation ──────────────────────────────
+  get: ^4.6.6                  # GetX : state management + navigation + DI
+
+  # ── Base de données locale (offline-first) ───────────────────
+  hive: ^2.2.3                 # Base de données NoSQL légère et rapide
+  hive_flutter: ^1.1.0         # Intégration Hive avec Flutter
+
+  # ── Utilitaires ──────────────────────────────────────────────
+  path_provider: ^2.1.2        # Accès au répertoire local (requis par Hive)
+  uuid: ^4.3.3                 # Génération d'identifiants uniques (UUIDs)
+  intl: ^0.19.0                # Formatage dates et monnaie en français
+
+  # ── Interface & animations ───────────────────────────────────
+  flutter_animate: ^4.5.0      # Animations fluides (fade, slide, scale...)
+  fl_chart: ^0.68.0            # Graphiques : donut, barres, courbes
+  google_fonts: ^6.2.1         # Police Inter (typographie premium)
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0        # Bonnes pratiques de code
+
+  # ── Génération de code Hive ───────────────────────────────────
+  hive_generator: ^2.0.1       # Génère les TypeAdapters Hive automatiquement
+  build_runner: ^2.4.9         # Outil de génération de code
+
+flutter:
+  uses-material-design: true
+
+  # ── Assets (à compléter au fur et à mesure) ──────────────────
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
