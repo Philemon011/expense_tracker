@@ -1,3 +1,4 @@
+import 'package:expense_tracker/screens/accueil/widgets/card_solde.dart';
 import 'package:flutter/material.dart';
 import '../../themes/app_colors.dart';
 import '../../utils/extensions.dart';
@@ -12,7 +13,7 @@ class AccueilScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background(context.isDark),
       body: const Center(
-        child: Text('Accueil — Phase 4'),
+        child: CardSolde(),
       ),
     );
   }
