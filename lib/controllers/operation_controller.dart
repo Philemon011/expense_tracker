@@ -113,23 +113,21 @@ Map<int, double> get totauxSortiesParMois => _totauxSortiesParMois;
   // ── Chargement des données ─────────────────────────────────────
 
   /// Charge toutes les données depuis Hive.
-  Future<void> _chargerTout() async {
-    _estEnChargement.value = true;
-
-    try {
-      // Charger en parallèle pour être plus rapide
-      await Future.wait([
-        _chargerOperations(),
-        _chargerCategories(),
-        _chargerComptes(),
-        _chargerPreferences(),
-      ]);
-    } catch (e) {
-      debugPrint('❌ OperationController: erreur chargement → $e');
-    } finally {
-      _estEnChargement.value = false;
-    }
+Future<void> _chargerTout() async {
+  _estEnChargement.value = true;
+  try {
+    await Future.wait([
+      _chargerOperations(),
+      _chargerCategories(),
+      _chargerComptes(),      // ← Vérifie que cette ligne est bien là
+      _chargerPreferences(),
+    ]);
+  } catch (e) {
+    debugPrint('❌ OperationController: erreur chargement → $e');
+  } finally {
+    _estEnChargement.value = false;
   }
+}
 
   /// Charge les opérations depuis Hive et recalcule tout
 Future<void> _chargerOperations() async {

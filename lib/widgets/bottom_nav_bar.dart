@@ -30,27 +30,27 @@ class BottomNavBar extends StatelessWidget {
   // ── Définition des onglets ─────────────────────────────────────
 
   static const _onglets = [
-    _OngletData(
-      label: 'Accueil',
-      iconeActive: Icons.home_rounded,
-      iconeInactive: Icons.home_outlined,
-    ),
-    _OngletData(
-      label: 'Opérations',
-      iconeActive: Icons.receipt_long_rounded,
-      iconeInactive: Icons.receipt_long_outlined,
-    ),
-    _OngletData(
-      label: 'Statistiques',
-      iconeActive: Icons.bar_chart_rounded,
-      iconeInactive: Icons.bar_chart_outlined,
-    ),
-    _OngletData(
-      label: 'Profil',
-      iconeActive: Icons.person_rounded,
-      iconeInactive: Icons.person_outline_rounded,
-    ),
-  ];
+  _OngletData(
+    label: 'Accueil',
+    iconeActive: Icons.home_rounded,
+    iconeInactive: Icons.home_outlined,
+  ),
+  _OngletData(
+    label: 'Opérations',
+    iconeActive: Icons.receipt_long_rounded,
+    iconeInactive: Icons.receipt_long_outlined,
+  ),
+  _OngletData(
+    label: 'Comptes',                                    // ← Modifier
+    iconeActive: Icons.account_balance_wallet_rounded,   // ← Modifier
+    iconeInactive: Icons.account_balance_wallet_outlined,// ← Modifier
+  ),
+  _OngletData(
+    label: 'Profil',
+    iconeActive: Icons.person_rounded,
+    iconeInactive: Icons.person_outline_rounded,
+  ),
+];
 
   @override
   Widget build(BuildContext context) {

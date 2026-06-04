@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart'; // ← AJOUTER
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/navigation_controller.dart';
 import '../controllers/operation_controller.dart';
+import '../controllers/compte_controller.dart';
+import '../controllers/statistique_controller.dart';    // ← AJOUTER
 import '../themes/app_theme.dart';
 import '../screens/main_screen.dart';
 
@@ -15,38 +17,29 @@ class ExpenseTrackerApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Expense Tracker',
       debugShowCheckedModeBanner: false,
-
-      // ── Langue française ─────────────────────────────────────
       locale: const Locale('fr', 'FR'),
       fallbackLocale: const Locale('fr', 'FR'),
-
-      // ── Delegates de localisation ────────────────────────────
-      // OBLIGATOIRES pour le DatePicker, les alertes, etc.
       localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,   // Material en FR
-        GlobalWidgetsLocalizations.delegate,    // Widgets de base en FR
-        GlobalCupertinoLocalizations.delegate,  // Cupertino en FR
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
-
-      // Langues supportées
       supportedLocales: const [
-        Locale('fr', 'FR'), // Français — principal
-        Locale('en', 'US'), // Anglais — fallback
+        Locale('fr', 'FR'),
+        Locale('en', 'US'),
       ],
-
-      // ── Thèmes ───────────────────────────────────────────────
       theme: AppTheme.themeLight(),
       darkTheme: AppTheme.themeDark(),
       themeMode: ThemeMode.light,
 
-      // ── Controllers globaux ──────────────────────────────────
       initialBinding: BindingsBuilder(() {
         Get.put(ThemeController(), permanent: true);
         Get.put(NavigationController(), permanent: true);
         Get.put(OperationController(), permanent: true);
+        Get.put(CompteController(), permanent: true);
+        Get.put(StatistiqueController(), permanent: true); // ← AJOUTER
       }),
 
-      // ── Écran principal ──────────────────────────────────────
       home: const MainScreen(),
     );
   }
