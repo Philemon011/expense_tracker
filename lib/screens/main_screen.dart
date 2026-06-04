@@ -6,11 +6,10 @@ import '../themes/app_colors.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'accueil/accueil_screen.dart';
 import 'operations/operations_screen.dart';
-import 'comptes/comptes_screen.dart';        // ← Remplacer StatistiquesScreen
-import 'statistiques/statistiques_screen.dart';
+import 'comptes/comptes_screen.dart';
+import 'statistiques/statistiques_screen.dart';  // ← Déjà importé
 import 'profil/profil_screen.dart';
 
-/// Écran racine de l'application.
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
 
@@ -28,10 +27,10 @@ class MainScreen extends StatelessWidget {
         body: IndexedStack(
           index: indexActuel,
           children: const [
-            AccueilScreen(),       // 0 — Accueil
-            OperationsScreen(),    // 1 — Opérations
-            ComptesScreen(),       // 2 — Comptes  ← ICI
-            ProfilScreen(),        // 3 — Profil
+            AccueilScreen(),        // 0 — Accueil
+            OperationsScreen(),     // 1 — Opérations
+            ComptesScreen(),        // 2 — Comptes
+            ProfilScreen(),         // 3 — Profil
           ],
         ),
         bottomNavigationBar: BottomNavBar(

@@ -5,7 +5,8 @@ import '../controllers/theme_controller.dart';
 import '../controllers/navigation_controller.dart';
 import '../controllers/operation_controller.dart';
 import '../controllers/compte_controller.dart';
-import '../controllers/statistique_controller.dart';    // ← AJOUTER
+import '../controllers/statistique_controller.dart';
+import '../controllers/budget_controller.dart';          // ← AJOUTER
 import '../themes/app_theme.dart';
 import '../screens/main_screen.dart';
 
@@ -37,7 +38,8 @@ class ExpenseTrackerApp extends StatelessWidget {
         Get.put(NavigationController(), permanent: true);
         Get.put(OperationController(), permanent: true);
         Get.put(CompteController(), permanent: true);
-        Get.put(StatistiqueController(), permanent: true); // ← AJOUTER
+        Get.put(StatistiqueController(), permanent: true);
+        Get.put(BudgetController(), permanent: true);    // ← AJOUTER
       }),
 
       home: const MainScreen(),

@@ -1,3 +1,5 @@
+import 'package:expense_tracker/controllers/budget_controller.dart';
+import 'package:expense_tracker/controllers/statistique_controller.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../models/operation_model.dart';
@@ -23,7 +25,6 @@ import 'package:hive/hive.dart';
 ///   ctrl.soldeTotal → double
 ///   ctrl.operationsRecentes → List<OperationModel>
 class OperationController extends GetxController {
-
   // ── Services ───────────────────────────────────────────────────
   final _operationService = OperationService();
   final _categorieService = CategorieService();
@@ -68,38 +69,37 @@ class OperationController extends GetxController {
 
 // ── Variables observables calculées ───────────────────────────
 
-/// Solde total de tous les comptes
-final _soldeTotal = 0.0.obs;
-double get soldeTotal => _soldeTotal.value;
+  /// Solde total de tous les comptes
+  final _soldeTotal = 0.0.obs;
+  double get soldeTotal => _soldeTotal.value;
 
-/// Total des entrées du mois sélectionné
-final _totalEntreesMois = 0.0.obs;
-double get totalEntreesMois => _totalEntreesMois.value;
+  /// Total des entrées du mois sélectionné
+  final _totalEntreesMois = 0.0.obs;
+  double get totalEntreesMois => _totalEntreesMois.value;
 
-/// Total des sorties du mois sélectionné
-final _totalSortiesMois = 0.0.obs;
-double get totalSortiesMois => _totalSortiesMois.value;
+  /// Total des sorties du mois sélectionné
+  final _totalSortiesMois = 0.0.obs;
+  double get totalSortiesMois => _totalSortiesMois.value;
 
-/// 5 dernières opérations pour le dashboard
-final _operationsRecentes = <OperationModel>[].obs;
-List<OperationModel> get operationsRecentes => _operationsRecentes;
+  /// 5 dernières opérations pour le dashboard
+  final _operationsRecentes = <OperationModel>[].obs;
+  List<OperationModel> get operationsRecentes => _operationsRecentes;
 
-/// Opérations du mois sélectionné
-final _operationsDuMois = <OperationModel>[].obs;
-List<OperationModel> get operationsDuMois => _operationsDuMois;
+  /// Opérations du mois sélectionné
+  final _operationsDuMois = <OperationModel>[].obs;
+  List<OperationModel> get operationsDuMois => _operationsDuMois;
 
-/// Totaux par catégorie — graphique donut
-final _totauxParCategorie = <String, double>{}.obs;
-Map<String, double> get totauxParCategorie => _totauxParCategorie;
+  /// Totaux par catégorie — graphique donut
+  final _totauxParCategorie = <String, double>{}.obs;
+  Map<String, double> get totauxParCategorie => _totauxParCategorie;
 
-/// Totaux entrées par mois — graphique barres
-final _totauxEntreesParMois = <int, double>{}.obs;
-Map<int, double> get totauxEntreesParMois => _totauxEntreesParMois;
+  /// Totaux entrées par mois — graphique barres
+  final _totauxEntreesParMois = <int, double>{}.obs;
+  Map<int, double> get totauxEntreesParMois => _totauxEntreesParMois;
 
-/// Totaux sorties par mois — graphique barres
-final _totauxSortiesParMois = <int, double>{}.obs;
-Map<int, double> get totauxSortiesParMois => _totauxSortiesParMois;
-
+  /// Totaux sorties par mois — graphique barres
+  final _totauxSortiesParMois = <int, double>{}.obs;
+  Map<int, double> get totauxSortiesParMois => _totauxSortiesParMois;
 
   // ── Cycle de vie ───────────────────────────────────────────────
 
@@ -113,69 +113,70 @@ Map<int, double> get totauxSortiesParMois => _totauxSortiesParMois;
   // ── Chargement des données ─────────────────────────────────────
 
   /// Charge toutes les données depuis Hive.
-Future<void> _chargerTout() async {
-  _estEnChargement.value = true;
-  try {
-    await Future.wait([
-      _chargerOperations(),
-      _chargerCategories(),
-      _chargerComptes(),      // ← Vérifie que cette ligne est bien là
-      _chargerPreferences(),
-    ]);
-  } catch (e) {
-    debugPrint('❌ OperationController: erreur chargement → $e');
-  } finally {
-    _estEnChargement.value = false;
+  Future<void> _chargerTout() async {
+    _estEnChargement.value = true;
+    try {
+      await Future.wait([
+        _chargerOperations(),
+        _chargerCategories(),
+        _chargerComptes(), // ← Vérifie que cette ligne est bien là
+        _chargerPreferences(),
+      ]);
+    } catch (e) {
+      debugPrint('❌ OperationController: erreur chargement → $e');
+    } finally {
+      _estEnChargement.value = false;
+    }
   }
-}
 
   /// Charge les opérations depuis Hive et recalcule tout
-Future<void> _chargerOperations() async {
-  _operations.value = _operationService.toutesLesOperations();
-  // Recalculer toutes les valeurs dérivées
-  _recalculer();
-}
+  Future<void> _chargerOperations() async {
+    _operations.value = _operationService.toutesLesOperations();
+    // Recalculer toutes les valeurs dérivées
+    _recalculer();
+  }
+
   /// Recalcule toutes les valeurs dérivées.
-///
-/// Appelée après chaque modification des opérations
-/// pour mettre à jour tous les widgets Obx.
-void _recalculer() {
-  final mois = _moisSelectionne.value;
-  final annee = _anneeSelectionnee.value;
+  ///
+  /// Appelée après chaque modification des opérations
+  /// pour mettre à jour tous les widgets Obx.
+  void _recalculer() {
+    final mois = _moisSelectionne.value;
+    final annee = _anneeSelectionnee.value;
 
-  // Recalculer les totaux
-  _soldeTotal.value = _compteService.calculerSoldeTotal();
-  _totalEntreesMois.value = _operationService.calculerTotalEntrees(
-    mois: mois,
-    annee: annee,
-  );
-  _totalSortiesMois.value = _operationService.calculerTotalSorties(
-    mois: mois,
-    annee: annee,
-  );
+    // Recalculer les totaux
+    _soldeTotal.value = _compteService.calculerSoldeTotal();
+    _totalEntreesMois.value = _operationService.calculerTotalEntrees(
+      mois: mois,
+      annee: annee,
+    );
+    _totalSortiesMois.value = _operationService.calculerTotalSorties(
+      mois: mois,
+      annee: annee,
+    );
 
-  // Recalculer les listes
-  _operationsRecentes.value =
-      _operationService.dernieresOperations(limite: 5);
-  _operationsDuMois.value = _operationService.operationsParMois(
-    mois: mois,
-    annee: annee,
-  );
+    // Recalculer les listes
+    _operationsRecentes.value =
+        _operationService.dernieresOperations(limite: 5);
+    _operationsDuMois.value = _operationService.operationsParMois(
+      mois: mois,
+      annee: annee,
+    );
 
-  // Recalculer les maps pour les graphiques
-  _totauxParCategorie.value = _operationService.totauxParCategorie(
-    mois: mois,
-    annee: annee,
-  );
-  _totauxEntreesParMois.value = _operationService.totauxParMoisAnnee(
-    annee: annee,
-    type: TypeOperation.entree,
-  );
-  _totauxSortiesParMois.value = _operationService.totauxParMoisAnnee(
-    annee: annee,
-    type: TypeOperation.sortie,
-  );
-}
+    // Recalculer les maps pour les graphiques
+    _totauxParCategorie.value = _operationService.totauxParCategorie(
+      mois: mois,
+      annee: annee,
+    );
+    _totauxEntreesParMois.value = _operationService.totauxParMoisAnnee(
+      annee: annee,
+      type: TypeOperation.entree,
+    );
+    _totauxSortiesParMois.value = _operationService.totauxParMoisAnnee(
+      annee: annee,
+      type: TypeOperation.sortie,
+    );
+  }
 
   /// Charge les catégories depuis Hive
   Future<void> _chargerCategories() async {
@@ -227,6 +228,14 @@ void _recalculer() {
       await _chargerOperations();
       // Notifier GetX pour mettre à jour tous les widgets
       update();
+      // Notifier StatistiqueController de se rafraîchir
+      if (Get.isRegistered<StatistiqueController>()) {
+        Get.find<StatistiqueController>().rafraichir();
+      }
+      // Notifier BudgetController de recalculer les progressions
+if (Get.isRegistered<BudgetController>()) {
+  Get.find<BudgetController>().rafraichir();
+}
       return true;
     } catch (e) {
       debugPrint('❌ OperationController: erreur ajout → $e');
@@ -241,6 +250,14 @@ void _recalculer() {
       if (succes) {
         await _chargerOperations();
         update();
+        // Notifier StatistiqueController de se rafraîchir
+        if (Get.isRegistered<StatistiqueController>()) {
+          Get.find<StatistiqueController>().rafraichir();
+        }
+        // Notifier BudgetController de recalculer les progressions
+if (Get.isRegistered<BudgetController>()) {
+  Get.find<BudgetController>().rafraichir();
+}
       }
       return succes;
     } catch (e) {
@@ -256,6 +273,14 @@ void _recalculer() {
       if (succes) {
         await _chargerOperations();
         update();
+        // Notifier StatistiqueController de se rafraîchir
+        if (Get.isRegistered<StatistiqueController>()) {
+          Get.find<StatistiqueController>().rafraichir();
+        }
+        // Notifier BudgetController de recalculer les progressions
+if (Get.isRegistered<BudgetController>()) {
+  Get.find<BudgetController>().rafraichir();
+}
       }
       return succes;
     } catch (e) {
@@ -267,39 +292,40 @@ void _recalculer() {
   // ── Filtres ────────────────────────────────────────────────────
 
   /// Change le mois sélectionné pour les filtres.
-void changerMois(int mois, int annee) {
-  _moisSelectionne.value = mois;
-  _anneeSelectionnee.value = annee;
-  _recalculer(); // ← Ajouter
-}
-
-/// Passe au mois précédent.
-void moisPrecedent() {
-  if (_moisSelectionne.value == 1) {
-    _moisSelectionne.value = 12;
-    _anneeSelectionnee.value--;
-  } else {
-    _moisSelectionne.value--;
+  void changerMois(int mois, int annee) {
+    _moisSelectionne.value = mois;
+    _anneeSelectionnee.value = annee;
+    _recalculer(); // ← Ajouter
   }
-  _recalculer(); // ← Ajouter
-}
 
-/// Passe au mois suivant.
-void moisSuivant() {
-  final now = DateTime.now();
-  final estMoisCourant = _moisSelectionne.value == now.month &&
-      _anneeSelectionnee.value == now.year;
-
-  if (estMoisCourant) return;
-
-  if (_moisSelectionne.value == 12) {
-    _moisSelectionne.value = 1;
-    _anneeSelectionnee.value++;
-  } else {
-    _moisSelectionne.value++;
+  /// Passe au mois précédent.
+  void moisPrecedent() {
+    if (_moisSelectionne.value == 1) {
+      _moisSelectionne.value = 12;
+      _anneeSelectionnee.value--;
+    } else {
+      _moisSelectionne.value--;
+    }
+    _recalculer(); // ← Ajouter
   }
-  _recalculer(); // ← Ajouter
-}
+
+  /// Passe au mois suivant.
+  void moisSuivant() {
+    final now = DateTime.now();
+    final estMoisCourant = _moisSelectionne.value == now.month &&
+        _anneeSelectionnee.value == now.year;
+
+    if (estMoisCourant) return;
+
+    if (_moisSelectionne.value == 12) {
+      _moisSelectionne.value = 1;
+      _anneeSelectionnee.value++;
+    } else {
+      _moisSelectionne.value++;
+    }
+    _recalculer(); // ← Ajouter
+  }
+
   /// Vrai si le mois sélectionné est le mois courant
   bool get estMoisCourant {
     final now = DateTime.now();
@@ -314,12 +340,10 @@ void moisSuivant() {
       _categorieService.categorieParId(id);
 
   /// Retourne un compte par son id.
-  CompteModel? compteParId(String id) =>
-      _compteService.compteParId(id);
+  CompteModel? compteParId(String id) => _compteService.compteParId(id);
 
   /// Retourne le solde d'un compte spécifique.
-  double soldeCompte(String compteId) =>
-      _compteService.calculerSolde(compteId);
+  double soldeCompte(String compteId) => _compteService.calculerSolde(compteId);
 
   /// Met à jour le nom de l'utilisateur.
   Future<void> mettreAJourNom(String nom) async {

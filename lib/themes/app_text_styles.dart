@@ -20,7 +20,7 @@ abstract class AppTextStyles {
   /// Montant principal — solde total du dashboard
   /// Exemple : "2 450,00 €"
   static TextStyle montantPrincipal(bool isDark) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 36,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary(isDark),
@@ -30,7 +30,7 @@ abstract class AppTextStyles {
   /// Montant moyen — cartes entrées/sorties
   /// Exemple : "+ 1 200,00 €"
   static TextStyle montantMoyen(bool isDark) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 22,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary(isDark),
@@ -43,7 +43,7 @@ abstract class AppTextStyles {
     required bool isDark,
     required bool isEntree,
   }) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 15,
         fontWeight: FontWeight.w600,
         // Vert si entrée, orange si sortie
@@ -56,7 +56,7 @@ abstract class AppTextStyles {
   /// Titre d'écran principal — H1
   /// Exemple : "Bonjour, David 👋"
   static TextStyle h1(bool isDark) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 28,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary(isDark),
@@ -66,7 +66,7 @@ abstract class AppTextStyles {
   /// Titre de section — H2
   /// Exemple : "Opérations récentes"
   static TextStyle h2(bool isDark) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary(isDark),
@@ -76,7 +76,7 @@ abstract class AppTextStyles {
   /// Titre de carte — H3
   /// Exemple : "Solde total"
   static TextStyle h3(bool isDark) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 14,
         fontWeight: FontWeight.w500,
         color: AppColors.textSecondary(isDark),
@@ -87,7 +87,7 @@ abstract class AppTextStyles {
 
   /// Texte principal — contenu standard
   static TextStyle bodyLarge(bool isDark) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 16,
         fontWeight: FontWeight.w400,
         color: AppColors.textPrimary(isDark),
@@ -96,7 +96,7 @@ abstract class AppTextStyles {
 
   /// Texte secondaire — descriptions, sous-titres
   static TextStyle bodyMedium(bool isDark) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: AppColors.textSecondary(isDark),
@@ -105,7 +105,7 @@ abstract class AppTextStyles {
 
   /// Texte petit — informations supplémentaires
   static TextStyle bodySmall(bool isDark) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: AppColors.textSecondary(isDark),
@@ -117,7 +117,7 @@ abstract class AppTextStyles {
   /// Label de bouton principal
   /// Exemple : "Ajouter une opération"
   static TextStyle boutonPrimaire() =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: Colors.white,
@@ -126,7 +126,7 @@ abstract class AppTextStyles {
 
   /// Label de bouton secondaire
   static TextStyle boutonSecondaire(bool isDark) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 16,
         fontWeight: FontWeight.w500,
         color: AppColors.textPrimary(isDark),
@@ -135,7 +135,7 @@ abstract class AppTextStyles {
 
   /// Label — badges, chips, catégories
   static TextStyle label(bool isDark) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: AppColors.textSecondary(isDark),
@@ -144,7 +144,7 @@ abstract class AppTextStyles {
 
   /// Hint — placeholders, textes désactivés
   static TextStyle hint(bool isDark) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: AppColors.textHintLight,
@@ -154,7 +154,7 @@ abstract class AppTextStyles {
 
   /// Label de la bottom navigation bar (actif)
   static TextStyle navActif() =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 11,
         fontWeight: FontWeight.w600,
         color: AppColors.primary,
@@ -162,7 +162,7 @@ abstract class AppTextStyles {
 
   /// Label de la bottom navigation bar (inactif)
   static TextStyle navInactif(bool isDark) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 11,
         fontWeight: FontWeight.w400,
         color: AppColors.textSecondary(isDark),
