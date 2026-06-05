@@ -6,7 +6,7 @@ import '../controllers/navigation_controller.dart';
 import '../controllers/operation_controller.dart';
 import '../controllers/compte_controller.dart';
 import '../controllers/statistique_controller.dart';
-import '../controllers/budget_controller.dart';          // ← AJOUTER
+import '../controllers/budget_controller.dart';
 import '../themes/app_theme.dart';
 import '../screens/main_screen.dart';
 
@@ -18,6 +18,8 @@ class ExpenseTrackerApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Expense Tracker',
       debugShowCheckedModeBanner: false,
+
+      // ── Langue française ─────────────────────────────────────
       locale: const Locale('fr', 'FR'),
       fallbackLocale: const Locale('fr', 'FR'),
       localizationsDelegates: const [
@@ -29,17 +31,25 @@ class ExpenseTrackerApp extends StatelessWidget {
         Locale('fr', 'FR'),
         Locale('en', 'US'),
       ],
+
+      // ── Thèmes ───────────────────────────────────────────────
       theme: AppTheme.themeLight(),
       darkTheme: AppTheme.themeDark(),
       themeMode: ThemeMode.light,
 
+      // ── Transitions globales ─────────────────────────────────
+      // Transition par défaut pour tous les Get.to()
+      defaultTransition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+
+      // ── Controllers globaux ──────────────────────────────────
       initialBinding: BindingsBuilder(() {
         Get.put(ThemeController(), permanent: true);
         Get.put(NavigationController(), permanent: true);
         Get.put(OperationController(), permanent: true);
         Get.put(CompteController(), permanent: true);
         Get.put(StatistiqueController(), permanent: true);
-        Get.put(BudgetController(), permanent: true);    // ← AJOUTER
+        Get.put(BudgetController(), permanent: true);
       }),
 
       home: const MainScreen(),

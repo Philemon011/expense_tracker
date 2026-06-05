@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_spacing.dart';
 import '../utils/extensions.dart';
+import 'package:google_fonts/google_fonts.dart'; // ← AJOUTER
 
 /// Barre de navigation principale de l'app.
 ///
@@ -30,27 +31,27 @@ class BottomNavBar extends StatelessWidget {
   // ── Définition des onglets ─────────────────────────────────────
 
   static const _onglets = [
-  _OngletData(
-    label: 'Accueil',
-    iconeActive: Icons.home_rounded,
-    iconeInactive: Icons.home_outlined,
-  ),
-  _OngletData(
-    label: 'Opérations',
-    iconeActive: Icons.receipt_long_rounded,
-    iconeInactive: Icons.receipt_long_outlined,
-  ),
-  _OngletData(
-    label: 'Comptes',                                    // ← Modifier
-    iconeActive: Icons.account_balance_wallet_rounded,   // ← Modifier
-    iconeInactive: Icons.account_balance_wallet_outlined,// ← Modifier
-  ),
-  _OngletData(
-    label: 'Profil',
-    iconeActive: Icons.person_rounded,
-    iconeInactive: Icons.person_outline_rounded,
-  ),
-];
+    _OngletData(
+      label: 'Accueil',
+      iconeActive: Icons.home_rounded,
+      iconeInactive: Icons.home_outlined,
+    ),
+    _OngletData(
+      label: 'Opérations',
+      iconeActive: Icons.receipt_long_rounded,
+      iconeInactive: Icons.receipt_long_outlined,
+    ),
+    _OngletData(
+      label: 'Statistiques', // ← Modifier
+      iconeActive: Icons.bar_chart_rounded, // ← Modifier
+      iconeInactive: Icons.bar_chart_outlined, // ← Modifier
+    ),
+    _OngletData(
+      label: 'Profil',
+      iconeActive: Icons.person_rounded,
+      iconeInactive: Icons.person_outline_rounded,
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -170,12 +171,12 @@ class _OngletItem extends StatelessWidget {
             const SizedBox(height: 2),
 
             // ── Label ────────────────────────────────────────────
+            // ── Label ────────────────────────────────────────────
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
-              style: TextStyle(
+              style: GoogleFonts.outfit(
                 fontSize: 10,
-                fontWeight:
-                    estActif ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: estActif ? FontWeight.w600 : FontWeight.w400,
                 color: estActif
                     ? AppColors.primary
                     : AppColors.textSecondary(isDark),

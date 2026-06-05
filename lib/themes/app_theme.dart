@@ -28,7 +28,7 @@ abstract class AppTheme {
       scaffoldBackgroundColor: AppColors.backgroundLight,
 
       // ── Typographie globale ────────────────────────────────────
-      textTheme: GoogleFonts.interTextTheme(
+      textTheme: GoogleFonts.outfitTextTheme(
         ThemeData.light().textTheme,
       ),
 
@@ -38,7 +38,7 @@ abstract class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.outfit(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimaryLight,
@@ -95,7 +95,7 @@ abstract class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: AppSpacing.borderRadiusButton,
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: GoogleFonts.outfit(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -129,7 +129,7 @@ abstract class AppTheme {
       scaffoldBackgroundColor: AppColors.backgroundDark,
 
       // ── Typographie globale ────────────────────────────────────
-      textTheme: GoogleFonts.interTextTheme(
+      textTheme: GoogleFonts.outfitTextTheme(
         ThemeData.dark().textTheme,
       ),
 
@@ -139,7 +139,7 @@ abstract class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.outfit(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimaryDark,
@@ -196,7 +196,7 @@ abstract class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: AppSpacing.borderRadiusButton,
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: GoogleFonts.outfit(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
