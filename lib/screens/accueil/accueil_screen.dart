@@ -12,6 +12,8 @@ import 'widgets/card_solde.dart';
 import 'widgets/card_resume.dart';
 import 'widgets/graphique_donut.dart';
 import 'widgets/liste_operations_recentes.dart';
+import '../../controllers/notification_controller.dart';      // ← AJOUTER
+import '../notifications/notifications_screen.dart';          // ← AJOUTER
 
 /// Écran d'accueil — Dashboard principal.
 ///
@@ -219,48 +221,82 @@ class _BoutonNotification extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final notifCtrl = Get.find<NotificationController>();
+
     return GestureDetector(
-      onTap: () {
-        // Future feature — notifications
-        context.snackbarInfo('Aucune nouvelle notification');
-      },
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: AppColors.card(isDark),
-          borderRadius: BorderRadius.circular(AppSpacing.radiusSmall),
-          boxShadow: AppSpacing.cardShadow(isDark),
-        ),
-        child: Stack(
+      onTap: () => Get.to(
+        () => const NotificationsScreen(),
+        transition: Transition.rightToLeft,
+        duration: const Duration(milliseconds: 300),
+      ),
+      child: Obx(() {
+        final nombreNonLues = notifCtrl.nombreNonLues;
+
+        return Stack(
+          clipBehavior: Clip.none,
           children: [
-            // Icône cloche
-            Center(
+
+            // ── Icône cloche ─────────────────────────────────
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.card(isDark),
+                borderRadius: BorderRadius.circular(
+                  AppSpacing.radiusSmall,
+                ),
+                boxShadow: AppSpacing.cardShadow(isDark),
+              ),
               child: Icon(
-                Icons.notifications_outlined,
+                nombreNonLues > 0
+                    ? Icons.notifications_rounded
+                    : Icons.notifications_outlined,
                 size: 22,
                 color: AppColors.textPrimary(isDark),
               ),
             ),
-            // Badge point vert
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
+
+            // ── Badge nombre ──────────────────────────────────
+            if (nombreNonLues > 0)
+              Positioned(
+                top: -4,
+                right: -4,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    color: AppColors.alerte,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      nombreNonLues > 9
+                          ? '9+'
+                          : nombreNonLues.toString(),
+                      style: const TextStyle(
+                        fontFamily: 'Outfit',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                )
+                    .animate()
+                    .scale(
+                      begin: const Offset(0, 0),
+                      end: const Offset(1, 1),
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.elasticOut,
+                    ),
               ),
-            ),
           ],
-        ),
-      ),
+        );
+      }),
     );
   }
 }
+
 
 // ── FAB Ajout rapide ───────────────────────────────────────────────
 

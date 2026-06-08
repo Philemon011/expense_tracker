@@ -1,3 +1,4 @@
+import 'package:expense_tracker/models/notification_model.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/operation_model.dart';
@@ -101,6 +102,14 @@ class HiveService {
     if (!Hive.isAdapterRegistered(5)) {
       Hive.registerAdapter(TypeCompteAdapter());
     }
+    
+    if (!Hive.isAdapterRegistered(6)) {
+  Hive.registerAdapter(NotificationModelAdapter());
+}
+if (!Hive.isAdapterRegistered(7)) {
+  Hive.registerAdapter(TypeNotificationAdapter());
+}
+
 
     debugPrint('✅ HiveService : adapters enregistrés');
   }
@@ -121,6 +130,7 @@ class HiveService {
       Hive.openBox<CategorieModel>(Constantes.boxCategories),
       Hive.openBox<CompteModel>(Constantes.boxComptes),
       Hive.openBox<BudgetModel>(Constantes.boxBudgets),
+      Hive.openBox<NotificationModel>(Constantes.boxNotifications),
     ]);
 
     debugPrint('✅ HiveService : boîtes ouvertes');
@@ -214,4 +224,7 @@ class HiveService {
     // On ne touche pas aux préférences utilisateur
     debugPrint('⚠️ HiveService : toutes les données effacées');
   }
+
+
+  
 }

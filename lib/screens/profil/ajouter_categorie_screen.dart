@@ -1,14 +1,16 @@
+import 'package:expense_tracker/controllers/budget_controller.dart';
+import 'package:expense_tracker/controllers/statistique_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../controllers/theme_controller.dart';
 import '../../services/categorie_service.dart';
 import '../../themes/app_colors.dart';
 import '../../themes/app_spacing.dart';
 import '../../utils/extensions.dart';
 import '../../widgets/app_button.dart';
+import '../../controllers/operation_controller.dart'; 
 
 /// Écran d'ajout d'une catégorie personnalisée.
 class AjouterCategorieScreen extends StatefulWidget {
@@ -96,29 +98,41 @@ class _AjouterCategorieScreenState
 
   // ── Sauvegarde ─────────────────────────────────────────────────
   Future<void> _sauvegarder() async {
-    final erreur = _valider();
-    if (erreur != null) {
-      context.snackbarErreur(erreur);
-      return;
-    }
-
-    setState(() => _estEnSauvegarde = true);
-
-    try {
-      await _service.ajouterCategorie(
-        nom: _nomCtrl.text.trim(),
-        iconeCode: _iconeCode,
-        couleurValue: _couleurValue,
-        typeOperation: _typeOperation,
-      );
-      context.snackbarSucces('Catégorie créée avec succès');
-      Get.back();
-    } catch (e) {
-      context.snackbarErreur('Une erreur est survenue');
-    } finally {
-      setState(() => _estEnSauvegarde = false);
-    }
+  final erreur = _valider();
+  if (erreur != null) {
+    context.snackbarErreur(erreur);
+    return;
   }
+
+  setState(() => _estEnSauvegarde = true);
+
+  try {
+    await _service.ajouterCategorie(
+      nom: _nomCtrl.text.trim(),
+      iconeCode: _iconeCode,
+      couleurValue: _couleurValue,
+      typeOperation: _typeOperation,
+    );
+
+    // Notifier tous les controllers
+    if (Get.isRegistered<OperationController>()) {
+      await Get.find<OperationController>().rafraichir();
+    }
+    if (Get.isRegistered<StatistiqueController>()) {
+      Get.find<StatistiqueController>().rafraichir();
+    }
+    if (Get.isRegistered<BudgetController>()) {
+      Get.find<BudgetController>().rafraichir();
+    }
+
+    context.snackbarSucces('Catégorie créée avec succès');
+    Get.back();
+  } catch (e) {
+    context.snackbarErreur('Une erreur est survenue');
+  } finally {
+    setState(() => _estEnSauvegarde = false);
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -162,13 +176,15 @@ class _AjouterCategorieScreenState
                       onChanged: (_) => setState(() {}),
                       textCapitalization:
                           TextCapitalization.sentences,
-                      style: GoogleFonts.outfit(
+                      style: TextStyle(
+  fontFamily: 'Outfit',
                         fontSize: 15,
                         color: AppColors.textPrimary(isDark),
                       ),
                       decoration: InputDecoration(
                         hintText: 'Ex: Voyages, Sport...',
-                        hintStyle: GoogleFonts.outfit(
+                        hintStyle: TextStyle(
+  fontFamily: 'Outfit',
                           color: AppColors.textSecondary(isDark),
                         ),
                         prefixIcon: const Icon(
@@ -261,7 +277,8 @@ class _AjouterCategorieScreenState
       ),
       title: Text(
         'Nouvelle catégorie',
-        style: GoogleFonts.outfit(
+        style: TextStyle(
+  fontFamily: 'Outfit',
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary(isDark),
@@ -343,7 +360,8 @@ class _ApercuCategorie extends StatelessWidget {
               children: [
                 Text(
                   nom,
-                  style: GoogleFonts.outfit(
+                  style: TextStyle(
+  fontFamily: 'Outfit',
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary(isDark),
@@ -352,7 +370,8 @@ class _ApercuCategorie extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   _labelType,
-                  style: GoogleFonts.outfit(
+                  style: TextStyle(
+  fontFamily: 'Outfit',
                     fontSize: 12,
                     color: AppColors.textSecondary(isDark),
                   ),
@@ -375,7 +394,8 @@ class _ApercuCategorie extends StatelessWidget {
             ),
             child: Text(
               'Aperçu',
-              style: GoogleFonts.outfit(
+              style: TextStyle(
+  fontFamily: 'Outfit',
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
                 color: couleur,
@@ -460,7 +480,8 @@ class _SelecteurType extends StatelessWidget {
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       t.label,
-                      style: GoogleFonts.outfit(
+                      style: TextStyle(
+  fontFamily: 'Outfit',
                         fontSize: 11,
                         fontWeight: estSelectionne
                             ? FontWeight.w600
@@ -620,7 +641,8 @@ class _LabelChamp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: GoogleFonts.outfit(
+      style: TextStyle(
+  fontFamily: 'Outfit',
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary(isDark),

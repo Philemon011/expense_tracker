@@ -13,11 +13,9 @@ import '../utils/constantes.dart';
 ///   - Gestion du compte principal
 ///   - Protection contre la suppression de comptes actifs
 class CompteService {
-
   // ── Accès aux boîtes Hive ──────────────────────────────────────
 
-  Box<CompteModel> get _box =>
-      Hive.box<CompteModel>(Constantes.boxComptes);
+  Box<CompteModel> get _box => Hive.box<CompteModel>(Constantes.boxComptes);
 
   Box<OperationModel> get _boxOperations =>
       Hive.box<OperationModel>(Constantes.boxOperations);
@@ -28,9 +26,7 @@ class CompteService {
 
   /// Retourne tous les comptes actifs (non archivés).
   List<CompteModel> tousLesComptes() {
-    return _box.values
-        .where((c) => !c.estArchive)
-        .toList()
+    return _box.values.where((c) => !c.estArchive).toList()
       ..sort((a, b) {
         // Le compte principal toujours en premier
         if (a.estPrincipal) return -1;
@@ -41,8 +37,7 @@ class CompteService {
 
   /// Retourne tous les comptes y compris les archivés.
   List<CompteModel> tousLesComptesAvecArchives() {
-    return _box.values.toList()
-      ..sort((a, b) => a.nom.compareTo(b.nom));
+    return _box.values.toList()..sort((a, b) => a.nom.compareTo(b.nom));
   }
 
   /// Retourne un compte par son id.
@@ -69,8 +64,8 @@ class CompteService {
     if (compte == null) return 0.0;
 
     // Filtrer les opérations de ce compte
-    final operations = _boxOperations.values
-        .where((op) => op.compteId == compteId);
+    final operations =
+        _boxOperations.values.where((op) => op.compteId == compteId);
 
     double solde = compte.soldeInitial;
 
@@ -186,7 +181,8 @@ class CompteService {
 
     // Impossible d'archiver le compte principal
     if (compte.estPrincipal) {
-      debugPrint('⚠️ CompteService : impossible d\'archiver le compte principal');
+      debugPrint(
+          '⚠️ CompteService : impossible d\'archiver le compte principal');
       return false;
     }
 
@@ -198,6 +194,31 @@ class CompteService {
     debugPrint('✅ CompteService : compte archivé → ${compte.nom}');
     return true;
   }
+
+
+
+
+
+  /// Désarchive un compte — le rend à nouveau visible.
+///
+/// Retourne false si le compte n'existe pas.
+Future<bool> desarchiverCompte(String compteId) async {
+  final compte = _box.get(compteId);
+
+  // Compte introuvable
+  if (compte == null) {
+    debugPrint('⚠️ CompteService : compte introuvable → $compteId');
+    return false;
+  }
+
+  await _box.put(
+    compteId,
+    compte.copyWith(estArchive: false),
+  );
+
+  debugPrint('✅ CompteService : compte désarchivé → ${compte.nom}');
+  return true;
+}
 
   /// Supprime définitivement un compte.
   ///
@@ -222,9 +243,23 @@ class CompteService {
       );
     }
 
+    /// Désarchive un compte — le rend à nouveau visible.
+    Future<bool> desarchiverCompte(String compteId) async {
+      final compte = _box.get(compteId);
+      if (compte == null) return false;
+
+      await _box.put(
+        compteId,
+        compte.copyWith(estArchive: false),
+      );
+
+      debugPrint('✅ CompteService : compte désarchivé → $compteId');
+      return true;
+    }
+
     // Vérifier qu'aucune opération n'utilise ce compte
-    final aDesOperations = _boxOperations.values
-        .any((op) => op.compteId == compteId);
+    final aDesOperations =
+        _boxOperations.values.any((op) => op.compteId == compteId);
 
     if (aDesOperations) {
       return (
@@ -253,12 +288,9 @@ class CompteService {
   ///
   /// Utile pour savoir si on peut supprimer un compte.
   int nombreOperations(String compteId) {
-    return _boxOperations.values
-        .where((op) => op.compteId == compteId)
-        .length;
+    return _boxOperations.values.where((op) => op.compteId == compteId).length;
   }
 
   /// Retourne le nombre total de comptes actifs.
-  int get nombreComptes =>
-      _box.values.where((c) => !c.estArchive).length;
+  int get nombreComptes => _box.values.where((c) => !c.estArchive).length;
 }

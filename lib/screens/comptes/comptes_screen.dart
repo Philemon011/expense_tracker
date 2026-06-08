@@ -1,3 +1,4 @@
+import 'package:expense_tracker/models/compte_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
@@ -88,7 +89,6 @@ class ComptesScreen extends StatelessWidget {
                   child: CustomScrollView(
                     physics: const BouncingScrollPhysics(),
                     slivers: [
-
                       // ── Carte solde total ──────────────────────
                       SliverToBoxAdapter(
                         child: Padding(
@@ -117,8 +117,7 @@ class ComptesScreen extends StatelessWidget {
                             AppSpacing.md,
                           ),
                           child: Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 'Tous les comptes',
@@ -161,8 +160,7 @@ class ComptesScreen extends StatelessWidget {
                                 onAjouter: () => Get.to(
                                   () => const AjouterCompteScreen(),
                                   transition: Transition.downToUp,
-                                  duration:
-                                      const Duration(milliseconds: 400),
+                                  duration: const Duration(milliseconds: 400),
                                 ),
                               ),
                             )
@@ -177,8 +175,7 @@ class ComptesScreen extends StatelessWidget {
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) {
                                     final compte = ctrl.comptes[index];
-                                    final solde =
-                                        ctrl.soldeCompte(compte.id);
+                                    final solde = ctrl.soldeCompte(compte.id);
 
                                     return Padding(
                                       padding: const EdgeInsets.only(
@@ -198,6 +195,77 @@ class ComptesScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
+
+                      // ── Section comptes archivés ───────────────────────────
+                      if (ctrl.aDesComptesArchives) ...[
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.pagePaddingHorizontal,
+                              AppSpacing.xxl,
+                              AppSpacing.pagePaddingHorizontal,
+                              AppSpacing.md,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.archive_rounded,
+                                  size: 16,
+                                  color: AppColors.textSecondary(isDark),
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                Text(
+                                  'Comptes archivés',
+                                  // APRÈS
+                                  style: TextStyle(
+                                    fontFamily: 'Outfit',
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textSecondary(
+                                        isDark), // ← si variable, retire const
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.pagePaddingHorizontal,
+                            0,
+                            AppSpacing.pagePaddingHorizontal,
+                            100,
+                          ),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final compte = ctrl.comptesArchives[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: AppSpacing.md,
+                                  ),
+                                  child: _CompteArchiveCard(
+                                    compte: compte,
+                                    isDark: isDark,
+                                    onDesarchiver: () async {
+                                      final succes =
+                                          await ctrl.desarchiverCompte(
+                                        compte.id,
+                                      );
+                                      if (succes) {
+                                        context.snackbarSucces(
+                                          '${compte.nom} désarchivé',
+                                        );
+                                      }
+                                    },
+                                  ),
+                                );
+                              },
+                              childCount: ctrl.comptesArchives.length,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -249,7 +317,6 @@ class _CarteSoldeTotal extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           // Label
           Text(
             'Patrimoine total',
@@ -295,14 +362,125 @@ class _CarteSoldeTotal extends StatelessWidget {
           ),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(duration: const Duration(milliseconds: 500))
-        .slideY(
+    ).animate().fadeIn(duration: const Duration(milliseconds: 500)).slideY(
           begin: 0.1,
           end: 0,
           duration: const Duration(milliseconds: 500),
           curve: Curves.easeOut,
         );
+  }
+}
+
+/// Carte d'un compte archivé avec bouton désarchiver.
+class _CompteArchiveCard extends StatelessWidget {
+  const _CompteArchiveCard({
+    required this.compte,
+    required this.isDark,
+    required this.onDesarchiver,
+  });
+
+  final CompteModel compte;
+  final bool isDark;
+  final VoidCallback onDesarchiver;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: AppSpacing.paddingListItem,
+      decoration: BoxDecoration(
+        color: AppColors.card(isDark),
+        borderRadius: AppSpacing.borderRadiusCard,
+        boxShadow: AppSpacing.cardShadow(isDark),
+        border: Border.all(
+          color: AppColors.border(isDark),
+          width: 0.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Icône compte grisée
+          Container(
+            width: AppSpacing.listIconSize,
+            height: AppSpacing.listIconSize,
+            decoration: BoxDecoration(
+              color: AppColors.input(isDark),
+              borderRadius: BorderRadius.circular(
+                AppSpacing.radiusIcon,
+              ),
+            ),
+            child: Icon(
+              compte.icone,
+              size: AppSpacing.categoryIconSize,
+              color: AppColors.textSecondary(isDark),
+            ),
+          ),
+
+          const SizedBox(width: AppSpacing.md),
+
+          // Nom + type
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  compte.nom,
+                  style: TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary(isDark),
+                  ),
+                ),
+                Text(
+                  compte.typeNom,
+                  style: TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 12,
+                    color: AppColors.textSecondary(isDark).withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Bouton désarchiver
+          GestureDetector(
+            onTap: onDesarchiver,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(
+                  AppSpacing.radiusFull,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.unarchive_rounded,
+                    size: 14,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Restaurer',
+                    style: TextStyle(
+                      fontFamily: 'Outfit',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

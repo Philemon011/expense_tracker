@@ -7,6 +7,7 @@ import '../services/budget_service.dart';
 import '../services/categorie_service.dart';
 import '../services/hive_service.dart';
 import '../utils/constantes.dart';
+import 'notification_controller.dart';
 
 /// Controller de gestion des budgets.
 ///
@@ -165,6 +166,9 @@ class BudgetController extends GetxController {
       }
 
       await _chargerBudgets();
+      if (Get.isRegistered<NotificationController>()) {
+  Get.find<NotificationController>().verifierEtGenerer();
+}
       return true;
     } catch (e) {
       debugPrint('❌ BudgetController: erreur ajout → $e');
@@ -177,6 +181,9 @@ class BudgetController extends GetxController {
     try {
       final succes = await _budgetService.modifierBudget(budget);
       if (succes) await _chargerBudgets();
+      if (Get.isRegistered<NotificationController>()) {
+  Get.find<NotificationController>().verifierEtGenerer();
+}
       return succes;
     } catch (e) {
       debugPrint('❌ BudgetController: erreur modification → $e');
@@ -189,6 +196,9 @@ class BudgetController extends GetxController {
     try {
       final succes = await _budgetService.supprimerBudget(id);
       if (succes) await _chargerBudgets();
+      if (Get.isRegistered<NotificationController>()) {
+  Get.find<NotificationController>().verifierEtGenerer();
+}
       return succes;
     } catch (e) {
       debugPrint('❌ BudgetController: erreur suppression → $e');

@@ -1,7 +1,8 @@
+import 'package:expense_tracker/controllers/budget_controller.dart';
+import 'package:expense_tracker/controllers/statistique_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../controllers/theme_controller.dart';
 import '../../models/categorie_model.dart';
 import '../../services/categorie_service.dart';
@@ -10,6 +11,7 @@ import '../../themes/app_spacing.dart';
 import '../../utils/extensions.dart';
 import '../../widgets/empty_state.dart';
 import 'ajouter_categorie_screen.dart';
+import '../../controllers/operation_controller.dart'; // ← AJOUTER
 
 /// Écran de gestion des catégories.
 ///
@@ -26,7 +28,6 @@ class CategoriesScreen extends StatefulWidget {
 
 class _CategoriesScreenState extends State<CategoriesScreen>
     with SingleTickerProviderStateMixin {
-
   final _categorieService = CategorieService();
   final themeCtrl = Get.find<ThemeController>();
   late TabController _tabCtrl;
@@ -72,7 +73,8 @@ class _CategoriesScreenState extends State<CategoriesScreen>
         ),
         title: Text(
           'Catégories',
-          style: GoogleFonts.outfit(
+          style: TextStyle(
+  fontFamily: 'Outfit',
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary(isDark),
@@ -116,11 +118,13 @@ class _CategoriesScreenState extends State<CategoriesScreen>
           unselectedLabelColor: AppColors.textSecondary(isDark),
           indicatorColor: AppColors.primary,
           indicatorWeight: 2,
-          labelStyle: GoogleFonts.outfit(
+          labelStyle: TextStyle(
+  fontFamily: 'Outfit',
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
-          unselectedLabelStyle: GoogleFonts.outfit(
+          unselectedLabelStyle: TextStyle(
+  fontFamily: 'Outfit',
             fontSize: 13,
             fontWeight: FontWeight.w400,
           ),
@@ -139,7 +143,6 @@ class _CategoriesScreenState extends State<CategoriesScreen>
       body: TabBarView(
         controller: _tabCtrl,
         children: [
-
           // Onglet catégories par défaut
           _ListeCategories(
             categories: parDefaut,
@@ -153,8 +156,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
               ? EmptyState(
                   icone: Icons.category_rounded,
                   titre: 'Aucune catégorie personnalisée',
-                  description:
-                      'Créez vos propres catégories\n'
+                  description: 'Créez vos propres catégories\n'
                       'pour mieux organiser vos opérations.',
                   labelBouton: 'Créer une catégorie',
                   onTapBouton: () async {
@@ -206,8 +208,7 @@ class _ListeCategories extends StatelessWidget {
         100,
       ),
       itemCount: categories.length,
-      separatorBuilder: (_, __) =>
-          const SizedBox(height: AppSpacing.sm),
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, index) {
         final cat = categories[index];
 
@@ -227,8 +228,7 @@ class _ListeCategories extends StatelessWidget {
           confirmDismiss: (_) async {
             return await context.confirmer(
               titre: 'Supprimer la catégorie',
-              message:
-                  'La catégorie "${cat.nom}" sera supprimée. '
+              message: 'La catégorie "${cat.nom}" sera supprimée. '
                   'Les opérations associées ne seront pas affectées.',
               texteBoutonConfirmer: 'Supprimer',
             );
@@ -237,6 +237,16 @@ class _ListeCategories extends StatelessWidget {
             final service = CategorieService();
             final resultat = await service.supprimerCategorie(cat.id);
             if (resultat.succes) {
+              // Notifier tous les controllers
+              if (Get.isRegistered<OperationController>()) {
+                await Get.find<OperationController>().rafraichir();
+              }
+              if (Get.isRegistered<StatistiqueController>()) {
+                Get.find<StatistiqueController>().rafraichir();
+              }
+              if (Get.isRegistered<BudgetController>()) {
+                Get.find<BudgetController>().rafraichir();
+              }
               context.snackbarSucces('Catégorie supprimée');
               onRecharger();
             } else {
@@ -311,7 +321,6 @@ class _CategorieTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-
           // Icône catégorie
           Container(
             width: AppSpacing.listIconSize,
@@ -338,7 +347,8 @@ class _CategorieTile extends StatelessWidget {
               children: [
                 Text(
                   categorie.nom,
-                  style: GoogleFonts.outfit(
+                  style: TextStyle(
+  fontFamily: 'Outfit',
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary(isDark),
@@ -347,7 +357,8 @@ class _CategorieTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   _labelType,
-                  style: GoogleFonts.outfit(
+                  style: TextStyle(
+  fontFamily: 'Outfit',
                     fontSize: 12,
                     color: AppColors.textSecondary(isDark),
                   ),
@@ -394,7 +405,8 @@ class _CategorieTile extends StatelessWidget {
               ),
               child: Text(
                 'Défaut',
-                style: GoogleFonts.outfit(
+                style: TextStyle(
+  fontFamily: 'Outfit',
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textSecondary(isDark),

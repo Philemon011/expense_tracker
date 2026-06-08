@@ -9,7 +9,7 @@ import '../../../themes/app_colors.dart';
 import '../../../themes/app_spacing.dart';
 import '../../../utils/extensions.dart';
 import '../../../utils/formatters.dart';
-import '../../../services/budget_service.dart'; 
+import '../../../services/budget_service.dart';
 
 /// Carte d'affichage d'un budget avec barre de progression.
 ///
@@ -97,7 +97,6 @@ class CarteBudget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // ── Header : catégorie + badge statut ────────────
               Row(
                 children: [
@@ -157,6 +156,7 @@ class CarteBudget extends StatelessWidget {
                             devise,
                           ),
                           style: TextStyle(
+                            fontFamily: 'Outfit', // ← AJOUTER
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: _couleurStatut,
@@ -168,6 +168,7 @@ class CarteBudget extends StatelessWidget {
                             devise,
                           )}',
                           style: TextStyle(
+                            fontFamily: 'Outfit', // ← AJOUTER
                             fontSize: 13,
                             color: AppColors.textSecondary(isDark),
                           ),
@@ -246,17 +247,17 @@ class CarteBudget extends StatelessWidget {
 
   /// Couleur selon le statut du budget.
   Color get _couleurStatut {
-  switch (budget.statut) {
-    case StatutBudget.normal:
-      return AppColors.primary;
-    case StatutBudget.attention:
-      return AppColors.sortie;
-    case StatutBudget.depasse:
-      return AppColors.alerte;
-    default:                        // ← AJOUTER
-      return AppColors.primary;     // ← AJOUTER
+    switch (budget.statut) {
+      case StatutBudget.normal:
+        return AppColors.primary;
+      case StatutBudget.attention:
+        return AppColors.sortie;
+      case StatutBudget.depasse:
+        return AppColors.alerte;
+      default: // ← AJOUTER
+        return AppColors.primary; // ← AJOUTER
+    }
   }
-}
 
   /// Ouvre la modification du montant max.
   void _ouvrirModification(BuildContext context) {
@@ -286,8 +287,7 @@ class _IconeCategorie extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ctrl = Get.find<BudgetController>();
-    final categorie =
-        ctrl.categorieParId(budget.budget.categorieId);
+    final categorie = ctrl.categorieParId(budget.budget.categorieId);
 
     final couleur = categorie?.couleur ?? AppColors.primary;
     final icone = categorie?.icone ?? Icons.category_rounded;
@@ -317,9 +317,8 @@ class _BadgeStatut extends StatelessWidget {
     final estDepasse = statut == StatutBudget.depasse;
     final couleur = estDepasse ? AppColors.alerte : AppColors.sortie;
     final label = estDepasse ? 'Dépassé' : 'Attention';
-    final icone = estDepasse
-        ? Icons.warning_rounded
-        : Icons.info_outline_rounded;
+    final icone =
+        estDepasse ? Icons.warning_rounded : Icons.info_outline_rounded;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -422,8 +421,7 @@ class _BottomSheetModifier extends StatefulWidget {
   final String devise;
 
   @override
-  State<_BottomSheetModifier> createState() =>
-      _BottomSheetModifierState();
+  State<_BottomSheetModifier> createState() => _BottomSheetModifierState();
 }
 
 class _BottomSheetModifierState extends State<_BottomSheetModifier> {
@@ -480,8 +478,7 @@ class _BottomSheetModifierState extends State<_BottomSheetModifier> {
         left: AppSpacing.pagePaddingHorizontal,
         right: AppSpacing.pagePaddingHorizontal,
         top: AppSpacing.lg,
-        bottom: MediaQuery.of(context).viewInsets.bottom +
-            AppSpacing.xxl,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xxl,
       ),
       decoration: BoxDecoration(
         color: AppColors.card(isDark),
@@ -494,7 +491,6 @@ class _BottomSheetModifierState extends State<_BottomSheetModifier> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           // Handle
           Center(
             child: Container(
@@ -563,8 +559,7 @@ class _BottomSheetModifierState extends State<_BottomSheetModifier> {
               ),
               Switch(
                 value: _estRecurrent,
-                onChanged: (val) =>
-                    setState(() => _estRecurrent = val),
+                onChanged: (val) => setState(() => _estRecurrent = val),
                 activeColor: AppColors.primary,
               ),
             ],

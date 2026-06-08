@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../themes/app_colors.dart';
 import '../../../themes/app_spacing.dart';
 
@@ -145,7 +144,8 @@ class _ParametreTileState extends State<ParametreTile>
                   children: [
                     Text(
                       widget.titre,
-                      style: GoogleFonts.outfit(
+                      style: TextStyle(
+  fontFamily: 'Outfit',
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: widget.estDangereux
@@ -157,7 +157,8 @@ class _ParametreTileState extends State<ParametreTile>
                       const SizedBox(height: 2),
                       Text(
                         widget.sousTitre!,
-                        style: GoogleFonts.outfit(
+                        style: TextStyle(
+  fontFamily: 'Outfit',
                           fontSize: 12,
                           color: AppColors.textSecondary(
                             widget.isDark,

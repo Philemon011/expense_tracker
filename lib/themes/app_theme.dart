@@ -1,54 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_spacing.dart';
 
-/// Thèmes Flutter complets — clair et sombre.
-///
-/// Utilisés dans GetMaterialApp comme theme et darkTheme.
-/// Tous les composants Flutter héritent automatiquement
-/// de ces styles (AppBar, Card, Input, Button...).
 abstract class AppTheme {
 
-  /// Thème mode clair
   static ThemeData themeLight() {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-
-      // ── Couleurs ───────────────────────────────────────────────
       colorScheme: ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.entree,
         surface: AppColors.cardLight,
         error: AppColors.alerte,
       ),
-
-      // ── Fond ──────────────────────────────────────────────────
       scaffoldBackgroundColor: AppColors.backgroundLight,
 
-      // ── Typographie globale ────────────────────────────────────
-      textTheme: GoogleFonts.outfitTextTheme(
-        ThemeData.light().textTheme,
-      ),
+      // ── Police Outfit locale ───────────────────────────────
+      fontFamily: 'Outfit',
 
-      // ── AppBar ─────────────────────────────────────────────────
-      appBarTheme: AppBarTheme(
+      // ── AppBar ─────────────────────────────────────────────
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.backgroundLight,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.outfit(
+        titleTextStyle: TextStyle(
+          fontFamily: 'Outfit',
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimaryLight,
         ),
-        iconTheme: const IconThemeData(
+        iconTheme: IconThemeData(
           color: AppColors.textPrimaryLight,
         ),
       ),
 
-      // ── Cartes ─────────────────────────────────────────────────
+      // ── Cartes ─────────────────────────────────────────────
       cardTheme: CardThemeData(
         color: AppColors.cardLight,
         elevation: 0,
@@ -57,7 +45,7 @@ abstract class AppTheme {
         ),
       ),
 
-      // ── Inputs ─────────────────────────────────────────────────
+      // ── Inputs ─────────────────────────────────────────────
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.inputLight,
@@ -82,7 +70,7 @@ abstract class AppTheme {
         ),
       ),
 
-      // ── Boutons ────────────────────────────────────────────────
+      // ── Boutons ─────────────────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -95,61 +83,92 @@ abstract class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: AppSpacing.borderRadiusButton,
           ),
-          textStyle: GoogleFonts.outfit(
+          textStyle: const TextStyle(
+            fontFamily: 'Outfit',
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
 
-      // ── Dividers ───────────────────────────────────────────────
+      // ── Dividers ────────────────────────────────────────────
       dividerTheme: const DividerThemeData(
         color: AppColors.borderLight,
         thickness: 1,
         space: 0,
       ),
+
+      // ── Bottom sheet ─────────────────────────────────────────
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.cardLight,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(AppSpacing.radiusCard),
+            topRight: Radius.circular(AppSpacing.radiusCard),
+          ),
+        ),
+        elevation: 0,
+      ),
+
+      // ── Dialog ───────────────────────────────────────────────
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.cardLight,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+        ),
+      ),
+
+      // ── Snack bar ─────────────────────────────────────────────
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(AppSpacing.radiusSmall),
+          ),
+        ),
+        contentTextStyle: TextStyle(
+          fontFamily: 'Outfit',
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 
-  /// Thème mode sombre
   static ThemeData themeDark() {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-
-      // ── Couleurs ───────────────────────────────────────────────
       colorScheme: ColorScheme.dark(
         primary: AppColors.primary,
         secondary: AppColors.entree,
         surface: AppColors.cardDark,
         error: AppColors.alerte,
       ),
-
-      // ── Fond ──────────────────────────────────────────────────
       scaffoldBackgroundColor: AppColors.backgroundDark,
 
-      // ── Typographie globale ────────────────────────────────────
-      textTheme: GoogleFonts.outfitTextTheme(
-        ThemeData.dark().textTheme,
-      ),
+      // ── Police Outfit locale ───────────────────────────────
+      fontFamily: 'Outfit',
 
-      // ── AppBar ─────────────────────────────────────────────────
-      appBarTheme: AppBarTheme(
+      // ── AppBar ─────────────────────────────────────────────
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.backgroundDark,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.outfit(
+        titleTextStyle: TextStyle(
+          fontFamily: 'Outfit',
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimaryDark,
         ),
-        iconTheme: const IconThemeData(
+        iconTheme: IconThemeData(
           color: AppColors.textPrimaryDark,
         ),
       ),
 
-      // ── Cartes ─────────────────────────────────────────────────
+      // ── Cartes ─────────────────────────────────────────────
       cardTheme: CardThemeData(
         color: AppColors.cardDark,
         elevation: 0,
@@ -158,7 +177,7 @@ abstract class AppTheme {
         ),
       ),
 
-      // ── Inputs ─────────────────────────────────────────────────
+      // ── Inputs ─────────────────────────────────────────────
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.inputDark,
@@ -183,7 +202,7 @@ abstract class AppTheme {
         ),
       ),
 
-      // ── Boutons ────────────────────────────────────────────────
+      // ── Boutons ─────────────────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -196,18 +215,55 @@ abstract class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: AppSpacing.borderRadiusButton,
           ),
-          textStyle: GoogleFonts.outfit(
+          textStyle: const TextStyle(
+            fontFamily: 'Outfit',
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
 
-      // ── Dividers ───────────────────────────────────────────────
+      // ── Dividers ────────────────────────────────────────────
       dividerTheme: const DividerThemeData(
         color: AppColors.borderDark,
         thickness: 1,
         space: 0,
+      ),
+
+      // ── Bottom sheet ─────────────────────────────────────────
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.cardDark,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(AppSpacing.radiusCard),
+            topRight: Radius.circular(AppSpacing.radiusCard),
+          ),
+        ),
+        elevation: 0,
+      ),
+
+      // ── Dialog ───────────────────────────────────────────────
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.cardDark,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+        ),
+      ),
+
+      // ── Snack bar ─────────────────────────────────────────────
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(AppSpacing.radiusSmall),
+          ),
+        ),
+        contentTextStyle: TextStyle(
+          fontFamily: 'Outfit',
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

@@ -25,10 +25,16 @@ dependencies:
   # ── Interface & animations ───────────────────────────────────
   flutter_animate: ^4.5.0      # Animations fluides (fade, slide, scale...)
   fl_chart: ^0.68.0            # Graphiques : donut, barres, courbes
-  google_fonts: ^6.2.1         # Police Inter (typographie premium)
+  # google_fonts: ^6.2.1         # Police Inter (typographie premium)
 
   flutter_localizations:
     sdk: flutter          # Delegates officiels Flutter (FR, EN, etc.)
+
+    
+    # ── Export CSV ───────────────────────────────────────────────
+  csv: ^6.0.0                # Génération fichiers CSV
+  share_plus: ^9.0.0         # Partage fichiers natif Android/iOS
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
@@ -42,7 +48,27 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # ── Assets (à compléter au fur et à mesure) ──────────────────
-  # assets:
-  #   - assets/images/
-  #   - assets/icons/
+  assets:
+    - assets/fonts/
+
+  fonts:
+    - family: Outfit
+      fonts:
+        - asset: assets/fonts/Outfit-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/Outfit-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/Outfit-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Outfit-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Outfit-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Outfit-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Outfit-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Outfit-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Outfit-Black.ttf
+          weight: 900

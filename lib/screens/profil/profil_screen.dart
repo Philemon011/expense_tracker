@@ -2,7 +2,6 @@ import 'package:expense_tracker/screens/profil/categories_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../controllers/operation_controller.dart';
 import '../../controllers/theme_controller.dart';
 import '../../controllers/budget_controller.dart';
@@ -17,6 +16,12 @@ import '../../widgets/app_button.dart';
 import '../statistiques/budgets_screen.dart';
 import '../comptes/comptes_screen.dart';
 import 'widgets/parametre_tile.dart';
+import '../../services/hive_service.dart'; // ← AJOUTER
+import 'package:hive/hive.dart'; // ← AJOUTER
+import '../../models/operation_model.dart'; // ← AJOUTER
+import '../../models/budget_model.dart'; // ← AJOUTER
+import '../../utils/constantes.dart'; // ← AJOUTER
+import '../../services/export_service.dart'; // ← AJOUTER
 
 /// Écran de profil et paramètres.
 ///
@@ -139,7 +144,8 @@ class ProfilScreen extends StatelessWidget {
                   child: Center(
                     child: Text(
                       'Expense Tracker v1.0.0',
-                      style: GoogleFonts.outfit(
+                      style: TextStyle(
+                        fontFamily: 'Outfit',
                         fontSize: 12,
                         color: AppColors.textSecondary(isDark),
                       ),
@@ -147,7 +153,6 @@ class ProfilScreen extends StatelessWidget {
                   ),
                 ),
               ),
-
 
               // ── Dévéloppeur ──────────────────────────────────
               SliverToBoxAdapter(
@@ -158,7 +163,8 @@ class ProfilScreen extends StatelessWidget {
                   child: Center(
                     child: Text(
                       'Dévéloppeur: Etounde Philémon (+229 0160585950)',
-                      style: GoogleFonts.outfit(
+                      style: TextStyle(
+                        fontFamily: 'Outfit',
                         fontSize: 12,
                         color: AppColors.textSecondary(isDark),
                       ),
@@ -198,7 +204,8 @@ class ProfilScreen extends StatelessWidget {
         ),
         title: Text(
           'Modifier le nom',
-          style: GoogleFonts.outfit(
+          style: TextStyle(
+            fontFamily: 'Outfit',
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary(isDark),
@@ -208,12 +215,14 @@ class ProfilScreen extends StatelessWidget {
           controller: ctrl,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          style: GoogleFonts.outfit(
+          style: TextStyle(
+            fontFamily: 'Outfit',
             color: AppColors.textPrimary(isDark),
           ),
           decoration: InputDecoration(
             hintText: 'Votre prénom',
-            hintStyle: GoogleFonts.outfit(
+            hintStyle: TextStyle(
+              fontFamily: 'Outfit',
               color: AppColors.textSecondary(isDark),
             ),
             prefixIcon: const Icon(
@@ -228,7 +237,8 @@ class ProfilScreen extends StatelessWidget {
             onPressed: () => Get.back(),
             child: Text(
               'Annuler',
-              style: GoogleFonts.outfit(
+              style: TextStyle(
+                fontFamily: 'Outfit',
                 color: AppColors.textSecondary(isDark),
               ),
             ),
@@ -243,7 +253,8 @@ class ProfilScreen extends StatelessWidget {
             },
             child: Text(
               'Enregistrer',
-              style: GoogleFonts.outfit(
+              style: TextStyle(
+                fontFamily: 'Outfit',
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
@@ -279,7 +290,8 @@ class ProfilScreen extends StatelessWidget {
         ),
         title: Text(
           'Choisir la devise',
-          style: GoogleFonts.outfit(
+          style: TextStyle(
+            fontFamily: 'Outfit',
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary(isDark),
@@ -329,7 +341,8 @@ class ProfilScreen extends StatelessWidget {
                         children: [
                           Text(
                             devise.code,
-                            style: GoogleFonts.outfit(
+                            style: TextStyle(
+                              fontFamily: 'Outfit',
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: estSelectionne
@@ -339,7 +352,8 @@ class ProfilScreen extends StatelessWidget {
                           ),
                           Text(
                             devise.nom,
-                            style: GoogleFonts.outfit(
+                            style: TextStyle(
+                              fontFamily: 'Outfit',
                               fontSize: 12,
                               color: AppColors.textSecondary(isDark),
                             ),
@@ -397,7 +411,8 @@ class _HeaderProfil extends StatelessWidget {
           child: Center(
             child: Text(
               nomUtilisateur.isNotEmpty ? nomUtilisateur[0].toUpperCase() : 'U',
-              style: GoogleFonts.outfit(
+              style: TextStyle(
+                fontFamily: 'Outfit',
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
@@ -415,7 +430,8 @@ class _HeaderProfil extends StatelessWidget {
             children: [
               Text(
                 nomUtilisateur,
-                style: GoogleFonts.outfit(
+                style: TextStyle(
+                  fontFamily: 'Outfit',
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary(isDark),
@@ -423,7 +439,8 @@ class _HeaderProfil extends StatelessWidget {
               ),
               Text(
                 'Votre profil',
-                style: GoogleFonts.outfit(
+                style: TextStyle(
+                  fontFamily: 'Outfit',
                   fontSize: 13,
                   color: AppColors.textSecondary(isDark),
                 ),
@@ -516,19 +533,19 @@ class _SectionPreferences extends StatelessWidget {
       isDark: isDark,
       enfants: [
         // Devise
-        ParametreTile(
-          icone: Icons.payments_rounded,
-          couleurIcone: AppColors.primary,
-          titre: 'Devise',
-          sousTitre: opCtrl.devise,
-          isDark: isDark,
-          onTap: onModifierDevise,
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: AppColors.textSecondary(isDark),
-            size: 20,
-          ),
-        ),
+        Obx(() => ParametreTile(
+              icone: Icons.payments_rounded,
+              couleurIcone: AppColors.primary,
+              titre: 'Devise',
+              sousTitre: opCtrl.devise, // ← Maintenant réactif via Obx
+              isDark: isDark,
+              onTap: onModifierDevise,
+              trailing: Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textSecondary(isDark),
+                size: 20,
+              ),
+            )),
       ],
     );
   }
@@ -603,7 +620,32 @@ class _SectionDonnees extends StatelessWidget {
             size: 20,
           ),
         ),
+
+        // ── Export CSV ─────────────────────────────────────────
+        ParametreTile(
+          icone: Icons.download_rounded,
+          couleurIcone: const Color(0xFF06B6D4),
+          titre: 'Exporter les données',
+          sousTitre: 'Export CSV — Excel, Google Sheets',
+          isDark: isDark,
+          onTap: () => _ouvrirExport(context, isDark),
+          trailing: Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.textSecondary(isDark),
+            size: 20,
+          ),
+        ),
       ],
+    );
+  }
+
+  /// Ouvre le bottom sheet d'export.
+  void _ouvrirExport(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _BottomSheetExport(isDark: isDark),
     );
   }
 }
@@ -646,6 +688,7 @@ class _SectionDanger extends StatelessWidget {
   Future<void> _confirmerReinitialisation(
     BuildContext context,
   ) async {
+    // Première confirmation
     final confirme = await context.confirmer(
       titre: 'Réinitialiser les données',
       message: 'Toutes vos opérations seront supprimées définitivement. '
@@ -654,9 +697,53 @@ class _SectionDanger extends StatelessWidget {
       texteBoutonAnnuler: 'Annuler',
     );
 
-    if (confirme) {
+    if (!confirme) return;
+
+    // Deuxième confirmation
+    final doubleConfirme = await context.confirmer(
+      titre: 'Êtes-vous sûr ?',
+      message: 'Cette action est irréversible. '
+          'Toutes vos opérations seront perdues définitivement.',
+      texteBoutonConfirmer: 'Oui, supprimer tout',
+      texteBoutonAnnuler: 'Annuler',
+    );
+
+    if (!doubleConfirme) return;
+
+    try {
+      // Vider directement via Hive avec le nom des boîtes
+      final boxOps = Hive.box<OperationModel>(
+        Constantes.boxOperations,
+      );
+      final boxBudgets = Hive.box<BudgetModel>(
+        Constantes.boxBudgets,
+      );
+
+      await boxOps.clear();
+      await boxBudgets.clear();
+
+      debugPrint('✅ Réinitialisation : '
+          '${boxOps.length} opérations restantes');
+      debugPrint('✅ Réinitialisation : '
+          '${boxBudgets.length} budgets restants');
+
+      // Rafraîchir tous les controllers
       await opCtrl.rafraichir();
-      context.snackbarSucces('Données réinitialisées');
+
+      if (Get.isRegistered<BudgetController>()) {
+        await Get.find<BudgetController>().rafraichir();
+      }
+      if (Get.isRegistered<StatistiqueController>()) {
+        await Get.find<StatistiqueController>().rafraichir();
+      }
+      if (Get.isRegistered<CompteController>()) {
+        await Get.find<CompteController>().rafraichir();
+      }
+
+      context.snackbarSucces('Données réinitialisées avec succès');
+    } catch (e) {
+      debugPrint('❌ Erreur réinitialisation : $e');
+      context.snackbarErreur('Erreur lors de la réinitialisation');
     }
   }
 }
@@ -688,7 +775,8 @@ class _Section extends StatelessWidget {
           ),
           child: Text(
             titre,
-            style: GoogleFonts.outfit(
+            style: TextStyle(
+              fontFamily: 'Outfit',
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary(isDark),
@@ -731,4 +819,508 @@ class _Section extends StatelessWidget {
         .fadeIn(duration: const Duration(milliseconds: 400))
         .slideY(begin: 0.1, end: 0);
   }
+}
+
+/// Bottom sheet avec les options d'export CSV.
+class _BottomSheetExport extends StatefulWidget {
+  const _BottomSheetExport({required this.isDark});
+
+  final bool isDark;
+
+  @override
+  State<_BottomSheetExport> createState() => _BottomSheetExportState();
+}
+
+class _BottomSheetExportState extends State<_BottomSheetExport> {
+  final _exportService = ExportService();
+  final _opCtrl = Get.find<OperationController>();
+  bool _estEnChargement = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.isDark;
+    final now = DateTime.now();
+
+    // Aperçu des données disponibles
+    final apercu = _exportService.apercuExport();
+    final nombreTotal = apercu['nombreOperations'] as int;
+
+    return Container(
+      padding: EdgeInsets.only(
+        left: AppSpacing.pagePaddingHorizontal,
+        right: AppSpacing.pagePaddingHorizontal,
+        top: AppSpacing.lg,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xxl,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.card(isDark),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(AppSpacing.radiusCard),
+          topRight: Radius.circular(AppSpacing.radiusCard),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Handle ───────────────────────────────────────────
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border(isDark),
+                borderRadius: BorderRadius.circular(
+                  AppSpacing.radiusFull,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          // ── Titre ────────────────────────────────────────────
+          Text(
+            'Exporter les données',
+            style: TextStyle(
+              fontFamily: 'Outfit',
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary(isDark),
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.xs),
+
+          Text(
+            '$nombreTotal opération(s) disponible(s)',
+            style: TextStyle(
+              fontFamily: 'Outfit',
+              fontSize: 13,
+              color: AppColors.textSecondary(isDark),
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.xxl),
+
+          // ── Options d'export ─────────────────────────────────
+          // Option 1 — Tout exporter
+          _OptionExport(
+            icone: Icons.download_for_offline_rounded,
+            couleur: AppColors.primary,
+            titre: 'Tout exporter',
+            sousTitre: '$nombreTotal opération(s) au total',
+            isDark: isDark,
+            estEnChargement: _estEnChargement,
+            onTap: () => _exporter(
+              context: context,
+              type: _TypeExport.tout,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          // Option 2 — Mois courant
+          _OptionExport(
+            icone: Icons.calendar_today_rounded,
+            couleur: AppColors.entree,
+            titre: 'Mois courant',
+            sousTitre: '${Formatters.nomMois(now.month)} ${now.year}',
+            isDark: isDark,
+            estEnChargement: _estEnChargement,
+            onTap: () => _exporter(
+              context: context,
+              type: _TypeExport.moisCourant,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          // Option 3 — Choisir période
+          _OptionExport(
+            icone: Icons.date_range_rounded,
+            couleur: AppColors.sortie,
+            titre: 'Choisir une période',
+            sousTitre: 'Sélectionner début et fin',
+            isDark: isDark,
+            estEnChargement: _estEnChargement,
+            onTap: () => _choisirPeriode(context),
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          // Option 4 — Sauvegarder en local
+          _OptionExport(
+            icone: Icons.save_alt_rounded,
+            couleur: const Color(0xFF8B5CF6),
+            titre: 'Sauvegarder en local',
+            sousTitre: 'Dossier Téléchargements',
+            isDark: isDark,
+            estEnChargement: _estEnChargement,
+            onTap: () => _sauvegarderLocal(context),
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          // ── Info format ───────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.input(isDark),
+              borderRadius: AppSpacing.borderRadiusCard,
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'Format CSV — compatible Excel, '
+                    'Google Sheets et Numbers',
+                    style: TextStyle(
+                      fontFamily: 'Outfit',
+                      fontSize: 12,
+                      color: AppColors.textSecondary(isDark),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Sauvegarde le CSV dans le dossier Téléchargements.
+  Future<void> _sauvegarderLocal(BuildContext context) async {
+    if (_estEnChargement) return;
+    setState(() => _estEnChargement = true);
+
+    try {
+      final resultat = await _exportService.sauvegarderEnLocal(
+        devise: _opCtrl.devise,
+      );
+
+      if (resultat.succes) {
+        Get.back(); // Fermer le bottom sheet
+
+        // Afficher dialog avec le chemin du fichier
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            backgroundColor: AppColors.card(widget.isDark),
+            shape: RoundedRectangleBorder(
+              borderRadius: AppSpacing.borderRadiusCard,
+            ),
+            title: Row(
+              children: const [
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+                SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Fichier sauvegardé',
+                  style: TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  resultat.message,
+                  style: TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 14,
+                    color: AppColors.textSecondary(widget.isDark),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: AppSpacing.borderRadiusCard,
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(
+                        Icons.folder_rounded,
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
+                      SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          'Gestionnaire de fichiers\n→ Téléchargements',
+                          style: TextStyle(
+                            fontFamily: 'Outfit',
+                            fontSize: 12,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(
+                    fontFamily: 'Outfit',
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      } else {
+        context.snackbarErreur(resultat.message);
+      }
+    } catch (e) {
+      context.snackbarErreur('Erreur lors de la sauvegarde');
+    } finally {
+      setState(() => _estEnChargement = false);
+    }
+  }
+  // ── Actions ────────────────────────────────────────────────────
+
+  /// Déclenche l'export selon le type choisi.
+  Future<void> _exporter({
+    required BuildContext context,
+    required _TypeExport type,
+    DateTime? debut,
+    DateTime? fin,
+  }) async {
+    if (_estEnChargement) return;
+    setState(() => _estEnChargement = true);
+
+    try {
+      ResultatExport resultat;
+      final now = DateTime.now();
+
+      switch (type) {
+        case _TypeExport.tout:
+          resultat = await _exportService.exporterTout(
+            devise: _opCtrl.devise,
+          );
+          break;
+        case _TypeExport.moisCourant:
+          resultat = await _exportService.exporterParMois(
+            mois: now.month,
+            annee: now.year,
+            devise: _opCtrl.devise,
+          );
+          break;
+        case _TypeExport.periode:
+          resultat = await _exportService.exporterParPeriode(
+            debut: debut!,
+            fin: fin!,
+            devise: _opCtrl.devise,
+          );
+          break;
+      }
+
+      if (resultat.succes) {
+        Get.back(); // Fermer le bottom sheet
+        context.snackbarSucces(resultat.message);
+      } else {
+        context.snackbarErreur(resultat.message);
+      }
+    } catch (e) {
+      context.snackbarErreur('Erreur lors de l\'export');
+    } finally {
+      setState(() => _estEnChargement = false);
+    }
+  }
+
+  /// Ouvre les date pickers pour choisir une période.
+  Future<void> _choisirPeriode(BuildContext context) async {
+    // Choisir la date de début
+    final debut = await showDatePicker(
+      context: context,
+      initialDate: DateTime(
+        DateTime.now().year,
+        DateTime.now().month,
+        1,
+      ),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      helpText: 'Date de début',
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: Colors.white,
+            surface: AppColors.card(widget.isDark),
+            onSurface: AppColors.textPrimary(widget.isDark),
+          ),
+        ),
+        child: child!,
+      ),
+    );
+
+    if (debut == null) return;
+
+    // Choisir la date de fin
+    final fin = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: debut,
+      lastDate: DateTime.now(),
+      helpText: 'Date de fin',
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: Colors.white,
+            surface: AppColors.card(widget.isDark),
+            onSurface: AppColors.textPrimary(widget.isDark),
+          ),
+        ),
+        child: child!,
+      ),
+    );
+
+    if (fin == null) return;
+
+    await _exporter(
+      context: context,
+      type: _TypeExport.periode,
+      debut: debut,
+      fin: fin,
+    );
+  }
+}
+
+// ── Option d'export ────────────────────────────────────────────────
+
+/// Carte d'une option d'export.
+class _OptionExport extends StatelessWidget {
+  const _OptionExport({
+    required this.icone,
+    required this.couleur,
+    required this.titre,
+    required this.sousTitre,
+    required this.isDark,
+    required this.onTap,
+    required this.estEnChargement,
+  });
+
+  final IconData icone;
+  final Color couleur;
+  final String titre;
+  final String sousTitre;
+  final bool isDark;
+  final VoidCallback onTap;
+  final bool estEnChargement;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: estEnChargement ? null : onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.background(isDark),
+          borderRadius: AppSpacing.borderRadiusCard,
+          border: Border.all(
+            color: AppColors.border(isDark),
+            width: 0.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Icône
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: couleur.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(
+                  AppSpacing.radiusSmall,
+                ),
+              ),
+              child: Icon(icone, size: 22, color: couleur),
+            ),
+
+            const SizedBox(width: AppSpacing.md),
+
+            // Titre + sous-titre
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titre,
+                    style: TextStyle(
+                      fontFamily: 'Outfit',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary(isDark),
+                    ),
+                  ),
+                  Text(
+                    sousTitre,
+                    style: TextStyle(
+                      fontFamily: 'Outfit',
+                      fontSize: 12,
+                      color: AppColors.textSecondary(isDark),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Flèche ou spinner
+            estEnChargement
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: couleur,
+                    ),
+                  )
+                : Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: AppColors.textSecondary(isDark),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Type d'export ──────────────────────────────────────────────────
+
+/// Types d'export disponibles.
+enum _TypeExport {
+  tout,
+  moisCourant,
+  periode,
 }

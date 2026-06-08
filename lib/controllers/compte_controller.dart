@@ -1,3 +1,5 @@
+import 'package:expense_tracker/controllers/budget_controller.dart';
+import 'package:expense_tracker/controllers/statistique_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/compte_model.dart';
@@ -39,6 +41,17 @@ class CompteController extends GetxController {
   final _devise = Constantes.deviseDefaut.obs;
   String get devise => _devise.value;
 
+
+  /// Retourne les comptes archivés uniquement.
+/// Retourne les comptes archivés uniquement.
+List<CompteModel> get comptesArchives =>
+    _compteService.tousLesComptesAvecArchives()
+        .where((c) => c.estArchive)
+        .toList();
+
+/// Vrai si au moins un compte est archivé.
+bool get aDesComptesArchives => comptesArchives.isNotEmpty;
+
   // ── Cycle de vie ───────────────────────────────────────────────
 
   @override
@@ -63,6 +76,25 @@ class CompteController extends GetxController {
       _estEnChargement.value = false;
     }
   }
+
+ /// Désarchive un compte.
+Future<bool> desarchiverCompte(String compteId) async {
+  final succes = await _compteService.desarchiverCompte(compteId);
+  if (succes) {
+    await _chargerComptes();
+
+    if (Get.isRegistered<OperationController>()) {
+      await Get.find<OperationController>().rafraichir();
+    }
+    if (Get.isRegistered<StatistiqueController>()) {
+      Get.find<StatistiqueController>().rafraichir();
+    }
+    if (Get.isRegistered<BudgetController>()) {
+      Get.find<BudgetController>().rafraichir();
+    }
+  }
+  return succes;
+}
 
   /// Charge les comptes depuis Hive et recalcule les soldes.
   Future<void> _chargerComptes() async {
@@ -97,6 +129,7 @@ class CompteController extends GetxController {
   // ── CRUD ───────────────────────────────────────────────────────
 
   /// Ajoute un nouveau compte.
+/// Ajoute un nouveau compte.
 Future<bool> ajouterCompte({
   required String nom,
   required TypeCompte type,
@@ -105,7 +138,6 @@ Future<bool> ajouterCompte({
   required int iconeCode,
 }) async {
   try {
-    // Vérifier nom unique
     if (_compteService.nomExisteDeja(nom)) {
       Get.snackbar(
         'Erreur',
@@ -130,9 +162,15 @@ Future<bool> ajouterCompte({
 
     await _chargerComptes();
 
-    // Notifier OperationController — synchroniser les comptes
+    // Notifier tous les controllers dépendants
     if (Get.isRegistered<OperationController>()) {
       await Get.find<OperationController>().rafraichir();
+    }
+    if (Get.isRegistered<StatistiqueController>()) {
+      Get.find<StatistiqueController>().rafraichir();
+    }
+    if (Get.isRegistered<BudgetController>()) {
+      Get.find<BudgetController>().rafraichir();
     }
 
     return true;
@@ -148,9 +186,15 @@ Future<bool> modifierCompte(CompteModel compte) async {
     final succes = await _compteService.modifierCompte(compte);
     if (succes) {
       await _chargerComptes();
-      // Notifier OperationController — synchroniser les comptes
+
       if (Get.isRegistered<OperationController>()) {
         await Get.find<OperationController>().rafraichir();
+      }
+      if (Get.isRegistered<StatistiqueController>()) {
+        Get.find<StatistiqueController>().rafraichir();
+      }
+      if (Get.isRegistered<BudgetController>()) {
+        Get.find<BudgetController>().rafraichir();
       }
     }
     return succes;
@@ -171,13 +215,20 @@ Future<bool> archiverCompte(String compteId) async {
   final succes = await _compteService.archiverCompte(compteId);
   if (succes) {
     await _chargerComptes();
-    // Notifier OperationController — synchroniser les comptes
+
     if (Get.isRegistered<OperationController>()) {
       await Get.find<OperationController>().rafraichir();
+    }
+    if (Get.isRegistered<StatistiqueController>()) {
+      Get.find<StatistiqueController>().rafraichir();
+    }
+    if (Get.isRegistered<BudgetController>()) {
+      Get.find<BudgetController>().rafraichir();
     }
   }
   return succes;
 }
+
 
   /// Supprime un compte.
   Future<({bool succes, String? erreur})> supprimerCompte(

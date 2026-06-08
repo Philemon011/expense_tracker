@@ -4,7 +4,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_spacing.dart';
 import '../utils/extensions.dart';
-import 'package:google_fonts/google_fonts.dart'; // ← AJOUTER
 
 /// Barre de navigation principale de l'app.
 ///
@@ -174,7 +173,8 @@ class _OngletItem extends StatelessWidget {
             // ── Label ────────────────────────────────────────────
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
-              style: GoogleFonts.outfit(
+              style: TextStyle(
+  fontFamily: 'Outfit',
                 fontSize: 10,
                 fontWeight: estActif ? FontWeight.w600 : FontWeight.w400,
                 color: estActif

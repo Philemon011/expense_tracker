@@ -8,22 +8,35 @@ import 'services/hive_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Orientation portrait uniquement
+  // ── Orientation portrait uniquement ──────────────────────────
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // Initialiser la locale française pour intl
-  // Nécessaire pour DateFormat en français
+  // ── Style de la status bar ───────────────────────────────────
+  // Icônes sombres sur fond clair par défaut
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
+
+  // ── Bords transparents ───────────────────────────────────────
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.edgeToEdge,
+  );
+
+  // ── Locale française pour intl ───────────────────────────────
   await initializeDateFormatting('fr_FR', null);
 
-  // Initialiser Hive
+  // ── Initialiser Hive ─────────────────────────────────────────
   await Hive.initFlutter();
-
-  // Initialiser HiveService — adapters + boîtes + données par défaut
   await HiveService.initialiser();
 
-  // Lancer l'application
   runApp(const ExpenseTrackerApp());
 }

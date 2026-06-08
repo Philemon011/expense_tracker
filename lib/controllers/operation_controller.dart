@@ -1,4 +1,6 @@
 import 'package:expense_tracker/controllers/budget_controller.dart';
+import 'package:expense_tracker/controllers/compte_controller.dart';
+import 'package:expense_tracker/controllers/notification_controller.dart';
 import 'package:expense_tracker/controllers/statistique_controller.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
@@ -206,88 +208,113 @@ class OperationController extends GetxController {
   /// Ajoute une nouvelle opération.
   ///
   /// Met à jour la liste réactive après l'ajout.
-  Future<bool> ajouterOperation({
-    required double montant,
-    required TypeOperation type,
-    required String categorieId,
-    required String compteId,
-    required DateTime date,
-    String? note,
-  }) async {
-    try {
-      await _operationService.ajouterOperation(
-        montant: montant,
-        type: type,
-        categorieId: categorieId,
-        compteId: compteId,
-        date: date,
-        note: note,
-      );
+  /// Ajoute une nouvelle opération.
+Future<bool> ajouterOperation({
+  required double montant,
+  required TypeOperation type,
+  required String categorieId,
+  required String compteId,
+  required DateTime date,
+  String? note,
+}) async {
+  try {
+    await _operationService.ajouterOperation(
+      montant: montant,
+      type: type,
+      categorieId: categorieId,
+      compteId: compteId,
+      date: date,
+      note: note,
+    );
 
-      // Rafraîchir les données après ajout
+    await _chargerOperations();
+    update();
+
+    // Notifier tous les controllers dépendants
+    if (Get.isRegistered<StatistiqueController>()) {
+      Get.find<StatistiqueController>().rafraichir();
+    }
+    if (Get.isRegistered<BudgetController>()) {
+      Get.find<BudgetController>().rafraichir();
+    }
+    // ── CORRECTION ──────────────────────────────────────────
+    if (Get.isRegistered<CompteController>()) {
+      await Get.find<CompteController>().rafraichir();
+    }
+    // Générer les notifications si nécessaire
+if (Get.isRegistered<NotificationController>()) {
+  Get.find<NotificationController>().verifierEtGenerer();
+}
+
+
+    return true;
+  } catch (e) {
+    debugPrint('❌ OperationController: erreur ajout → $e');
+    return false;
+  }
+}
+
+/// Modifie une opération existante.
+Future<bool> modifierOperation(OperationModel operation) async {
+  try {
+    final succes = await _operationService.modifierOperation(operation);
+    if (succes) {
       await _chargerOperations();
-      // Notifier GetX pour mettre à jour tous les widgets
       update();
-      // Notifier StatistiqueController de se rafraîchir
+
       if (Get.isRegistered<StatistiqueController>()) {
         Get.find<StatistiqueController>().rafraichir();
       }
-      // Notifier BudgetController de recalculer les progressions
-if (Get.isRegistered<BudgetController>()) {
-  Get.find<BudgetController>().rafraichir();
-}
-      return true;
-    } catch (e) {
-      debugPrint('❌ OperationController: erreur ajout → $e');
-      return false;
-    }
-  }
-
-  /// Modifie une opération existante.
-  Future<bool> modifierOperation(OperationModel operation) async {
-    try {
-      final succes = await _operationService.modifierOperation(operation);
-      if (succes) {
-        await _chargerOperations();
-        update();
-        // Notifier StatistiqueController de se rafraîchir
-        if (Get.isRegistered<StatistiqueController>()) {
-          Get.find<StatistiqueController>().rafraichir();
-        }
-        // Notifier BudgetController de recalculer les progressions
-if (Get.isRegistered<BudgetController>()) {
-  Get.find<BudgetController>().rafraichir();
-}
+      if (Get.isRegistered<BudgetController>()) {
+        Get.find<BudgetController>().rafraichir();
       }
-      return succes;
-    } catch (e) {
-      debugPrint('❌ OperationController: erreur modification → $e');
-      return false;
-    }
-  }
-
-  /// Supprime une opération par son id.
-  Future<bool> supprimerOperation(String id) async {
-    try {
-      final succes = await _operationService.supprimerOperation(id);
-      if (succes) {
-        await _chargerOperations();
-        update();
-        // Notifier StatistiqueController de se rafraîchir
-        if (Get.isRegistered<StatistiqueController>()) {
-          Get.find<StatistiqueController>().rafraichir();
-        }
-        // Notifier BudgetController de recalculer les progressions
-if (Get.isRegistered<BudgetController>()) {
-  Get.find<BudgetController>().rafraichir();
-}
+      // ── CORRECTION ────────────────────────────────────────
+      if (Get.isRegistered<CompteController>()) {
+        await Get.find<CompteController>().rafraichir();
       }
-      return succes;
-    } catch (e) {
-      debugPrint('❌ OperationController: erreur suppression → $e');
-      return false;
+
+      // Générer les notifications si nécessaire
+if (Get.isRegistered<NotificationController>()) {
+  Get.find<NotificationController>().verifierEtGenerer();
+}
     }
+    return succes;
+  } catch (e) {
+    debugPrint('❌ OperationController: erreur modification → $e');
+    return false;
   }
+}
+
+/// Supprime une opération par son id.
+Future<bool> supprimerOperation(String id) async {
+  try {
+    final succes = await _operationService.supprimerOperation(id);
+    if (succes) {
+      await _chargerOperations();
+      update();
+
+      if (Get.isRegistered<StatistiqueController>()) {
+        Get.find<StatistiqueController>().rafraichir();
+      }
+      if (Get.isRegistered<BudgetController>()) {
+        Get.find<BudgetController>().rafraichir();
+      }
+      // ── CORRECTION ────────────────────────────────────────
+      if (Get.isRegistered<CompteController>()) {
+        await Get.find<CompteController>().rafraichir();
+      }
+
+      // Générer les notifications si nécessaire
+if (Get.isRegistered<NotificationController>()) {
+  Get.find<NotificationController>().verifierEtGenerer();
+}
+    }
+    return succes;
+  } catch (e) {
+    debugPrint('❌ OperationController: erreur suppression → $e');
+    return false;
+  }
+}
 
   // ── Filtres ────────────────────────────────────────────────────
 

@@ -39,4 +39,7 @@ abstract class Constantes {
 
   /// Nom d'utilisateur par défaut
   static const String nomUtilisateurDefaut = 'Utilisateur';
+
+  /// Boîte des notifications in-app
+static const String boxNotifications = 'notifications';
 }
