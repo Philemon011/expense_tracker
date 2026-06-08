@@ -92,27 +92,20 @@ class NotificationController extends GetxController {
   // ── Génération automatique ─────────────────────────────────────
 
   /// Vérifie et génère les notifications nécessaires.
-  ///
-  /// Appelée après chaque ajout/modification d'opération
-  /// et au démarrage de l'app.
-  Future<void> verifierEtGenerer() async {
-    _estEnChargement.value = true;
-    try {
-      // Recharger la devise en cas de changement
-      _chargerDevise();
-
-      await _service.verifierEtGenerer(
-        devise: _devise.value,
-      );
-
-      // Recharger les notifications après génération
-      _chargerNotifications();
-    } catch (e) {
-      debugPrint('❌ NotificationController: erreur → $e');
-    } finally {
-      _estEnChargement.value = false;
-    }
+Future<void> verifierEtGenerer() async {
+  // Ne pas mettre _estEnChargement ici pour éviter
+  // les rebuilds inutiles au démarrage
+  try {
+    _chargerDevise();
+    await _service.verifierEtGenerer(
+      devise: _devise.value,
+    );
+    // Recharger après génération
+    _chargerNotifications();
+  } catch (e) {
+    debugPrint('❌ NotificationController: erreur → $e');
   }
+}
 
   /// Rafraîchit les notifications.
   Future<void> rafraichir() async {

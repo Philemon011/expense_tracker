@@ -628,7 +628,12 @@ class _SectionDonnees extends StatelessWidget {
           titre: 'Exporter les données',
           sousTitre: 'Export CSV — Excel, Google Sheets',
           isDark: isDark,
-          onTap: () => _ouvrirExport(context, isDark),
+          onTap: () => showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => _BottomSheetExport(isDark: isDark),
+          ),
           trailing: Icon(
             Icons.chevron_right_rounded,
             color: AppColors.textSecondary(isDark),
@@ -821,19 +826,31 @@ class _Section extends StatelessWidget {
   }
 }
 
-/// Bottom sheet avec les options d'export CSV.
+// ── Bottom Sheet Export ────────────────────────────────────────────
+
+/// Bottom sheet avec les 3 options d'export.
+///
+/// Flow :
+///   1. Utilisateur choisit une option
+///   2. CSV généré
+///   3. Dialog → Partager ou Sauvegarder
 class _BottomSheetExport extends StatefulWidget {
   const _BottomSheetExport({required this.isDark});
 
   final bool isDark;
 
   @override
-  State<_BottomSheetExport> createState() => _BottomSheetExportState();
+  State<_BottomSheetExport> createState() =>
+      _BottomSheetExportState();
 }
 
 class _BottomSheetExportState extends State<_BottomSheetExport> {
+
+  // ── Services & Controllers ────────────────────────────────────
   final _exportService = ExportService();
   final _opCtrl = Get.find<OperationController>();
+
+  // ── État ──────────────────────────────────────────────────────
   bool _estEnChargement = false;
 
   @override
@@ -841,16 +858,20 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
     final isDark = widget.isDark;
     final now = DateTime.now();
 
-    // Aperçu des données disponibles
-    final apercu = _exportService.apercuExport();
-    final nombreTotal = apercu['nombreOperations'] as int;
+    // Nombre d'opérations disponibles par option
+    final nombreTotal = _exportService.nombreOperations();
+    final nombreMois = _exportService.nombreOperations(
+      mois: now.month,
+      annee: now.year,
+    );
 
     return Container(
       padding: EdgeInsets.only(
         left: AppSpacing.pagePaddingHorizontal,
         right: AppSpacing.pagePaddingHorizontal,
         top: AppSpacing.lg,
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xxl,
+        bottom: MediaQuery.of(context).viewInsets.bottom +
+            AppSpacing.xxxl,
       ),
       decoration: BoxDecoration(
         color: AppColors.card(isDark),
@@ -863,7 +884,8 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Handle ───────────────────────────────────────────
+
+          // ── Handle ─────────────────────────────────────────
           Center(
             child: Container(
               width: 40,
@@ -879,7 +901,7 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
 
           const SizedBox(height: AppSpacing.lg),
 
-          // ── Titre ────────────────────────────────────────────
+          // ── Titre ───────────────────────────────────────────
           Text(
             'Exporter les données',
             style: TextStyle(
@@ -893,7 +915,7 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
           const SizedBox(height: AppSpacing.xs),
 
           Text(
-            '$nombreTotal opération(s) disponible(s)',
+            'Choisissez la période à exporter',
             style: TextStyle(
               fontFamily: 'Outfit',
               fontSize: 13,
@@ -903,8 +925,7 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
 
           const SizedBox(height: AppSpacing.xxl),
 
-          // ── Options d'export ─────────────────────────────────
-          // Option 1 — Tout exporter
+          // ── Option 1 : Tout exporter ────────────────────────
           _OptionExport(
             icone: Icons.download_for_offline_rounded,
             couleur: AppColors.primary,
@@ -912,57 +933,60 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
             sousTitre: '$nombreTotal opération(s) au total',
             isDark: isDark,
             estEnChargement: _estEnChargement,
-            onTap: () => _exporter(
-              context: context,
-              type: _TypeExport.tout,
-            ),
+            onTap: () async {
+              final operations =
+                  _exportService.toutesLesOperations();
+              await _lancerExport(
+                context: context,
+                operations: operations,
+                nomFichier: 'expense_tracker_complet',
+              );
+            },
           ),
 
           const SizedBox(height: AppSpacing.sm),
 
-          // Option 2 — Mois courant
+          // ── Option 2 : Mois courant ─────────────────────────
           _OptionExport(
             icone: Icons.calendar_today_rounded,
             couleur: AppColors.entree,
             titre: 'Mois courant',
-            sousTitre: '${Formatters.nomMois(now.month)} ${now.year}',
+            sousTitre: '$nombreMois opération(s) — '
+                '${Formatters.nomMois(now.month)} ${now.year}',
             isDark: isDark,
             estEnChargement: _estEnChargement,
-            onTap: () => _exporter(
-              context: context,
-              type: _TypeExport.moisCourant,
-            ),
+            onTap: () async {
+              final operations = _exportService.operationsDuMois(
+                mois: now.month,
+                annee: now.year,
+              );
+              await _lancerExport(
+                context: context,
+                operations: operations,
+                nomFichier:
+                    'expense_tracker_'
+                    '${Formatters.nomMois(now.month).toLowerCase()}'
+                    '_${now.year}',
+              );
+            },
           ),
 
           const SizedBox(height: AppSpacing.sm),
 
-          // Option 3 — Choisir période
+          // ── Option 3 : Période personnalisée ────────────────
           _OptionExport(
             icone: Icons.date_range_rounded,
             couleur: AppColors.sortie,
-            titre: 'Choisir une période',
-            sousTitre: 'Sélectionner début et fin',
+            titre: 'Période personnalisée',
+            sousTitre: 'Choisir une date de début et de fin',
             isDark: isDark,
             estEnChargement: _estEnChargement,
             onTap: () => _choisirPeriode(context),
           ),
 
-          const SizedBox(height: AppSpacing.sm),
-
-          // Option 4 — Sauvegarder en local
-          _OptionExport(
-            icone: Icons.save_alt_rounded,
-            couleur: const Color(0xFF8B5CF6),
-            titre: 'Sauvegarder en local',
-            sousTitre: 'Dossier Téléchargements',
-            isDark: isDark,
-            estEnChargement: _estEnChargement,
-            onTap: () => _sauvegarderLocal(context),
-          ),
-
           const SizedBox(height: AppSpacing.lg),
 
-          // ── Info format ───────────────────────────────────────
+          // ── Info format ─────────────────────────────────────
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
@@ -996,166 +1020,51 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
     );
   }
 
-  /// Sauvegarde le CSV dans le dossier Téléchargements.
-  Future<void> _sauvegarderLocal(BuildContext context) async {
-    if (_estEnChargement) return;
-    setState(() => _estEnChargement = true);
+  // ── Logique export ─────────────────────────────────────────────
 
-    try {
-      final resultat = await _exportService.sauvegarderEnLocal(
-        devise: _opCtrl.devise,
-      );
-
-      if (resultat.succes) {
-        Get.back(); // Fermer le bottom sheet
-
-        // Afficher dialog avec le chemin du fichier
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            backgroundColor: AppColors.card(widget.isDark),
-            shape: RoundedRectangleBorder(
-              borderRadius: AppSpacing.borderRadiusCard,
-            ),
-            title: Row(
-              children: const [
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.primary,
-                  size: 24,
-                ),
-                SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Fichier sauvegardé',
-                  style: TextStyle(
-                    fontFamily: 'Outfit',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  resultat.message,
-                  style: TextStyle(
-                    fontFamily: 'Outfit',
-                    fontSize: 14,
-                    color: AppColors.textSecondary(widget.isDark),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: AppSpacing.borderRadiusCard,
-                  ),
-                  child: Row(
-                    children: const [
-                      Icon(
-                        Icons.folder_rounded,
-                        color: AppColors.primary,
-                        size: 16,
-                      ),
-                      SizedBox(width: AppSpacing.xs),
-                      Expanded(
-                        child: Text(
-                          'Gestionnaire de fichiers\n→ Téléchargements',
-                          style: TextStyle(
-                            fontFamily: 'Outfit',
-                            fontSize: 12,
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(),
-                child: const Text(
-                  'OK',
-                  style: TextStyle(
-                    fontFamily: 'Outfit',
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      } else {
-        context.snackbarErreur(resultat.message);
-      }
-    } catch (e) {
-      context.snackbarErreur('Erreur lors de la sauvegarde');
-    } finally {
-      setState(() => _estEnChargement = false);
-    }
-  }
-  // ── Actions ────────────────────────────────────────────────────
-
-  /// Déclenche l'export selon le type choisi.
-  Future<void> _exporter({
+  /// Lance la génération du CSV puis affiche le dialog d'action.
+  Future<void> _lancerExport({
     required BuildContext context,
-    required _TypeExport type,
-    DateTime? debut,
-    DateTime? fin,
+    required List<OperationModel> operations,
+    required String nomFichier,
   }) async {
-    if (_estEnChargement) return;
+    // Vérifier qu'il y a des données
+    if (operations.isEmpty) {
+      context.snackbarErreur('Aucune opération sur cette période');
+      return;
+    }
+
     setState(() => _estEnChargement = true);
 
-    try {
-      ResultatExport resultat;
-      final now = DateTime.now();
+    // Générer le CSV
+    final resultat = await _exportService.generer(
+      operations: operations,
+      devise: _opCtrl.devise,
+      nomFichier: nomFichier,
+    );
 
-      switch (type) {
-        case _TypeExport.tout:
-          resultat = await _exportService.exporterTout(
-            devise: _opCtrl.devise,
-          );
-          break;
-        case _TypeExport.moisCourant:
-          resultat = await _exportService.exporterParMois(
-            mois: now.month,
-            annee: now.year,
-            devise: _opCtrl.devise,
-          );
-          break;
-        case _TypeExport.periode:
-          resultat = await _exportService.exporterParPeriode(
-            debut: debut!,
-            fin: fin!,
-            devise: _opCtrl.devise,
-          );
-          break;
-      }
+    setState(() => _estEnChargement = false);
 
-      if (resultat.succes) {
-        Get.back(); // Fermer le bottom sheet
-        context.snackbarSucces(resultat.message);
-      } else {
-        context.snackbarErreur(resultat.message);
-      }
-    } catch (e) {
-      context.snackbarErreur('Erreur lors de l\'export');
-    } finally {
-      setState(() => _estEnChargement = false);
+    if (!resultat.succes) {
+      context.snackbarErreur(resultat.message);
+      return;
     }
+
+    // Fermer le bottom sheet
+    Get.back();
+
+    // Afficher le dialog Partager / Sauvegarder
+    _afficherDialogAction(
+      context: context,
+      resultat: resultat,
+    );
   }
 
-  /// Ouvre les date pickers pour choisir une période.
+  /// Ouvre le date picker pour choisir une période.
   Future<void> _choisirPeriode(BuildContext context) async {
-    // Choisir la date de début
+    final isDark = widget.isDark;
+
+    // Date de début
     final debut = await showDatePicker(
       context: context,
       initialDate: DateTime(
@@ -1166,13 +1075,13 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
       helpText: 'Date de début',
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
           colorScheme: ColorScheme.light(
             primary: AppColors.primary,
             onPrimary: Colors.white,
-            surface: AppColors.card(widget.isDark),
-            onSurface: AppColors.textPrimary(widget.isDark),
+            surface: AppColors.card(isDark),
+            onSurface: AppColors.textPrimary(isDark),
           ),
         ),
         child: child!,
@@ -1181,20 +1090,20 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
 
     if (debut == null) return;
 
-    // Choisir la date de fin
+    // Date de fin
     final fin = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: debut,
       lastDate: DateTime.now(),
       helpText: 'Date de fin',
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
           colorScheme: ColorScheme.light(
             primary: AppColors.primary,
             onPrimary: Colors.white,
-            surface: AppColors.card(widget.isDark),
-            onSurface: AppColors.textPrimary(widget.isDark),
+            surface: AppColors.card(isDark),
+            onSurface: AppColors.textPrimary(isDark),
           ),
         ),
         child: child!,
@@ -1203,18 +1112,259 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
 
     if (fin == null) return;
 
-    await _exporter(
-      context: context,
-      type: _TypeExport.periode,
+    // Récupérer les opérations de la période
+    final operations = _exportService.operationsParPeriode(
       debut: debut,
       fin: fin,
+    );
+
+    await _lancerExport(
+      context: context,
+      operations: operations,
+      nomFichier: 'expense_tracker_'
+          '${debut.day}-${debut.month}-${debut.year}_'
+          '${fin.day}-${fin.month}-${fin.year}',
+    );
+  }
+
+  // ── Dialog Partager / Sauvegarder ─────────────────────────────
+
+  /// Affiche le dialog avec les 2 actions disponibles.
+  void _afficherDialogAction({
+    required BuildContext context,
+    required ResultatExport resultat,
+  }) {
+    final isDark = widget.isDark;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.card(isDark),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.borderRadiusCard,
+        ),
+
+        // ── Titre ──────────────────────────────────────────
+        title: Row(
+          children: const [
+            Icon(
+              Icons.check_circle_rounded,
+              color: AppColors.primary,
+              size: 22,
+            ),
+            SizedBox(width: AppSpacing.sm),
+            Text(
+              'CSV généré !',
+              style: TextStyle(
+                fontFamily: 'Outfit',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+
+            // Nombre d'opérations
+            Text(
+              '${resultat.nombreOperations} opération(s) '
+              'prête(s) à exporter',
+              style: TextStyle(
+                fontFamily: 'Outfit',
+                fontSize: 13,
+                color: AppColors.textSecondary(isDark),
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // ── Bouton Partager ────────────────────────────
+            _BoutonAction(
+              icone: Icons.share_rounded,
+              couleur: AppColors.primary,
+              titre: 'Partager',
+              sousTitre: 'WhatsApp, Email, Drive...',
+              isDark: isDark,
+              onTap: () async {
+                Get.back();
+                await _exportService.partager(resultat);
+              },
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            // ── Bouton Sauvegarder ─────────────────────────
+            _BoutonAction(
+              icone: Icons.save_alt_rounded,
+              couleur: const Color(0xFF8B5CF6),
+              titre: 'Sauvegarder en local',
+              sousTitre: 'Dossier Téléchargements',
+              isDark: isDark,
+              onTap: () async {
+                Get.back();
+                final sauvegarde =
+                    await _exportService.sauvegarderEnLocal(
+                  resultat,
+                );
+                if (sauvegarde.succes) {
+                  // Afficher le chemin du fichier sauvegardé
+                  _afficherConfirmationSauvegarde(
+                    context: context,
+                    sauvegarde: sauvegarde,
+                    isDark: isDark,
+                  );
+                } else {
+                  context.snackbarErreur(sauvegarde.message);
+                }
+              },
+            ),
+          ],
+        ),
+
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Annuler',
+              style: TextStyle(
+                fontFamily: 'Outfit',
+                color: AppColors.textSecondary(isDark),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Affiche la confirmation après sauvegarde locale.
+  void _afficherConfirmationSauvegarde({
+    required BuildContext context,
+    required ResultatSauvegarde sauvegarde,
+    required bool isDark,
+  }) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.card(isDark),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.borderRadiusCard,
+        ),
+        title: Row(
+          children: const [
+            Icon(
+              Icons.check_circle_rounded,
+              color: AppColors.primary,
+              size: 22,
+            ),
+            SizedBox(width: AppSpacing.sm),
+            Text(
+              'Fichier sauvegardé',
+              style: TextStyle(
+                fontFamily: 'Outfit',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            Text(
+              'Votre fichier CSV a été sauvegardé dans :',
+              style: TextStyle(
+                fontFamily: 'Outfit',
+                fontSize: 13,
+                color: AppColors.textSecondary(isDark),
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Chemin du fichier
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: AppSpacing.borderRadiusCard,
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.folder_rounded,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Téléchargements',
+                          style: TextStyle(
+                            fontFamily: 'Outfit',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        Text(
+                          sauvegarde.nomFichier ?? '',
+                          style: const TextStyle(
+                            fontFamily: 'Outfit',
+                            fontSize: 11,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            Text(
+              'Ouvrez le gestionnaire de fichiers\n'
+              'pour accéder à votre export.',
+              style: TextStyle(
+                fontFamily: 'Outfit',
+                fontSize: 12,
+                color: AppColors.textSecondary(isDark),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text(
+              'OK',
+              style: TextStyle(
+                fontFamily: 'Outfit',
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 // ── Option d'export ────────────────────────────────────────────────
 
-/// Carte d'une option d'export.
+/// Carte d'une option dans le bottom sheet.
 class _OptionExport extends StatelessWidget {
   const _OptionExport({
     required this.icone,
@@ -1238,89 +1388,165 @@ class _OptionExport extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: estEnChargement ? null : onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.background(isDark),
-          borderRadius: AppSpacing.borderRadiusCard,
-          border: Border.all(
-            color: AppColors.border(isDark),
-            width: 0.5,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: estEnChargement ? 0.5 : 1.0,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.background(isDark),
+            borderRadius: AppSpacing.borderRadiusCard,
+            border: Border.all(
+              color: AppColors.border(isDark),
+              width: 0.5,
+            ),
           ),
-        ),
-        child: Row(
-          children: [
-            // Icône
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: couleur.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(
-                  AppSpacing.radiusSmall,
+          child: Row(
+            children: [
+
+              // Icône
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: couleur.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(
+                    AppSpacing.radiusSmall,
+                  ),
+                ),
+                child: Icon(icone, size: 22, color: couleur),
+              ),
+
+              const SizedBox(width: AppSpacing.md),
+
+              // Titre + sous-titre
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      titre,
+                      style: TextStyle(
+                        fontFamily: 'Outfit',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary(isDark),
+                      ),
+                    ),
+                    Text(
+                      sousTitre,
+                      style: TextStyle(
+                        fontFamily: 'Outfit',
+                        fontSize: 12,
+                        color: AppColors.textSecondary(isDark),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Icon(icone, size: 22, color: couleur),
-            ),
 
-            const SizedBox(width: AppSpacing.md),
-
-            // Titre + sous-titre
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    titre,
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary(isDark),
-                    ),
-                  ),
-                  Text(
-                    sousTitre,
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
-                      fontSize: 12,
+              // Flèche ou loading
+              estEnChargement
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: couleur,
+                      ),
+                    )
+                  : Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
                       color: AppColors.textSecondary(isDark),
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Flèche ou spinner
-            estEnChargement
-                ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: couleur,
-                    ),
-                  )
-                : Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: AppColors.textSecondary(isDark),
-                  ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// ── Type d'export ──────────────────────────────────────────────────
+// ── Bouton action dialog ───────────────────────────────────────────
 
-/// Types d'export disponibles.
-enum _TypeExport {
-  tout,
-  moisCourant,
-  periode,
+/// Bouton dans le dialog Partager/Sauvegarder.
+class _BoutonAction extends StatelessWidget {
+  const _BoutonAction({
+    required this.icone,
+    required this.couleur,
+    required this.titre,
+    required this.sousTitre,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  final IconData icone;
+  final Color couleur;
+  final String titre;
+  final String sousTitre;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: couleur.withOpacity(0.08),
+          borderRadius: AppSpacing.borderRadiusCard,
+          border: Border.all(
+            color: couleur.withOpacity(0.25),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+
+            // Icône
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: couleur.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(
+                  AppSpacing.radiusSmall,
+                ),
+              ),
+              child: Icon(icone, size: 20, color: couleur),
+            ),
+
+            const SizedBox(width: AppSpacing.md),
+
+            // Titre + sous-titre
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titre,
+                  style: TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: couleur,
+                  ),
+                ),
+                Text(
+                  sousTitre,
+                  style: TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 12,
+                    color: couleur.withOpacity(0.75),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

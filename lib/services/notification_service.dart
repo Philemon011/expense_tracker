@@ -86,22 +86,61 @@ class NotificationService {
 
   // ── Génération automatique ─────────────────────────────────────
 
-  /// Vérifie et génère les notifications nécessaires.
-  ///
-  /// À appeler après chaque ajout/modification d'opération
-  /// et au démarrage de l'app.
-  Future<void> verifierEtGenerer({
-    required String devise,
-  }) async {
-    await Future.wait([
-      _verifierBudgets(devise: devise),
-      _verifierGrossesDepenses(devise: devise),
-      _verifierResumeMensuel(devise: devise),
-    ]);
+/// Vérifie et génère les notifications nécessaires.
+Future<void> verifierEtGenerer({
+  required String devise,
+}) async {
+  // Nettoyer les notifications obsolètes d'abord
+  await _nettoyerNotificationsObsoletes();
 
-    // Nettoyer si trop de notifications
-    await _nettoyerAnciennesNotifications();
+  await Future.wait([
+    _verifierBudgets(devise: devise),
+    _verifierGrossesDepenses(devise: devise),
+    _verifierResumeMensuel(devise: devise),
+  ]);
+
+  await _nettoyerAnciennesNotifications();
+}
+
+
+/// Supprime les notifications dont les données source
+/// n'existent plus (opérations supprimées).
+Future<void> _nettoyerNotificationsObsoletes() async {
+  final aSupprimer = <String>[];
+
+  for (final notif in _box.values) {
+    if (notif.donneeId == null) continue;
+
+    // Vérifier les notifications de grosse dépense
+    if (notif.donneeId!.startsWith('grosse_depense_')) {
+      final operationId = notif.donneeId!
+          .replaceFirst('grosse_depense_', '');
+
+      // Vérifier si l'opération existe encore
+      final operations = _operationService.toutesLesOperations();
+      final existe = operations.any((op) => op.id == operationId);
+
+      if (!existe) {
+        aSupprimer.add(notif.id);
+        debugPrint(
+          '🗑️ NotificationService : notif obsolète → ${notif.titre}',
+        );
+      }
+    }
   }
+
+  // Supprimer les notifications obsolètes
+  for (final id in aSupprimer) {
+    await _box.delete(id);
+  }
+
+  if (aSupprimer.isNotEmpty) {
+    debugPrint(
+      '✅ NotificationService : ${aSupprimer.length} '
+      'notification(s) obsolète(s) supprimée(s)',
+    );
+  }
+}
 
   // ── Vérification budgets ───────────────────────────────────────
 
@@ -133,96 +172,95 @@ class NotificationService {
   }
 
   /// Génère une notification de budget dépassé.
-  /// Évite les doublons — une seule par budget par mois.
-  Future<void> _genererNotifBudgetDepasse({
-    required BudgetModel budget,
-    required double montantDepense,
-    required String devise,
-  }) async {
-    // Clé unique pour éviter les doublons
-    final cleUnique = 'budget_depasse_${budget.id}_'
-        '${DateTime.now().month}_${DateTime.now().year}';
+Future<void> _genererNotifBudgetDepasse({
+  required BudgetModel budget,
+  required double montantDepense,
+  required String devise,
+}) async {
+  final cleUnique = 'budget_depasse_${budget.id}_'
+      '${DateTime.now().month}_${DateTime.now().year}';
 
-    // Vérifier si déjà générée
-    final existeDeja = _box.values.any(
-      (n) => n.donneeId == cleUnique,
-    );
-    if (existeDeja) return;
+  // Ne pas régénérer si la notification existe déjà
+  // qu'elle soit lue ou non lue
+  final existeDeja = _box.values.any(
+    (n) => n.donneeId == cleUnique,
+  );
+  if (existeDeja) return;    // ← Ne rien faire si déjà générée
 
-    await _ajouterNotification(
-      type: TypeNotification.budgetDepasse,
-      titre: 'Budget dépassé !',
-      message: 'Votre budget a été dépassé de '
-          '${Formatters.montant(
-            montantDepense - budget.montantMax,
-            devise,
-          )}.',
-      donneeId: cleUnique,
-    );
-  }
+  await _ajouterNotification(
+    type: TypeNotification.budgetDepasse,
+    titre: 'Budget dépassé !',
+    message: 'Votre budget a été dépassé de '
+        '${Formatters.montant(
+          montantDepense - budget.montantMax,
+          devise,
+        )}.',
+    donneeId: cleUnique,
+  );
+}
 
   /// Génère une notification d'alerte budget (75%).
-  Future<void> _genererNotifBudgetAlerte({
-    required BudgetModel budget,
-    required double pourcentage,
-    required String devise,
-  }) async {
-    final cleUnique = 'budget_alerte_${budget.id}_'
-        '${DateTime.now().month}_${DateTime.now().year}';
+Future<void> _genererNotifBudgetAlerte({
+  required BudgetModel budget,
+  required double pourcentage,
+  required String devise,
+}) async {
+  final cleUnique = 'budget_alerte_${budget.id}_'
+      '${DateTime.now().month}_${DateTime.now().year}';
 
-    final existeDeja = _box.values.any(
-      (n) => n.donneeId == cleUnique,
-    );
-    if (existeDeja) return;
+  // Ne pas régénérer si déjà générée — lue ou non lue
+  final existeDeja = _box.values.any(
+    (n) => n.donneeId == cleUnique,
+  );
+  if (existeDeja) return;    // ← Ne rien faire si déjà générée
 
-    await _ajouterNotification(
-      type: TypeNotification.budgetAlerte,
-      titre: 'Budget presque atteint',
-      message: 'Vous avez consommé '
-          '${(pourcentage * 100).toStringAsFixed(0)}% '
-          'de votre budget ce mois-ci.',
-      donneeId: cleUnique,
-    );
-  }
+  await _ajouterNotification(
+    type: TypeNotification.budgetAlerte,
+    titre: 'Budget presque atteint',
+    message: 'Vous avez consommé '
+        '${(pourcentage * 100).toStringAsFixed(0)}% '
+        'de votre budget ce mois-ci.',
+    donneeId: cleUnique,
+  );
+}
 
   // ── Vérification grosses dépenses ─────────────────────────────
 
-  /// Vérifie les grosses dépenses récentes.
-  Future<void> _verifierGrossesDepenses({
-    required String devise,
-  }) async {
-    final now = DateTime.now();
-    final operations = _operationService.operationsParMois(
-      mois: now.month,
-      annee: now.year,
+Future<void> _verifierGrossesDepenses({
+  required String devise,
+}) async {
+  final now = DateTime.now();
+  final operations = _operationService.operationsParMois(
+    mois: now.month,
+    annee: now.year,
+  );
+
+  final grossesSorties = operations.where(
+    (op) => op.estSortie && op.montant >= _seuilGrosseDepense,
+  );
+
+  for (final op in grossesSorties) {
+    final cleUnique = 'grosse_depense_${op.id}';
+
+    // Ne pas régénérer si déjà générée — lue ou non lue
+    final existeDeja = _box.values.any(
+      (n) => n.donneeId == cleUnique,
     );
+    if (existeDeja) continue;    // ← Ne rien faire si déjà générée
 
-    // Filtrer les sorties importantes
-    final grossesSorties = operations.where(
-      (op) => op.estSortie && op.montant >= _seuilGrosseDepense,
+    await _ajouterNotification(
+      type: TypeNotification.grosseDepense,
+      titre: 'Dépense importante enregistrée',
+      message: 'Une dépense de ${Formatters.montant(
+        op.montant,
+        devise,
+      )} a été enregistrée${op.note != null
+          ? ' : ${op.note}'
+          : '.'}',
+      donneeId: cleUnique,
     );
-
-    for (final op in grossesSorties) {
-      final cleUnique = 'grosse_depense_${op.id}';
-
-      final existeDeja = _box.values.any(
-        (n) => n.donneeId == cleUnique,
-      );
-      if (existeDeja) continue;
-
-      await _ajouterNotification(
-        type: TypeNotification.grosseDepense,
-        titre: 'Dépense importante enregistrée',
-        message: 'Une dépense de ${Formatters.montant(
-          op.montant,
-          devise,
-        )} a été enregistrée${op.note != null
-            ? ' : ${op.note}'
-            : '.'}',
-        donneeId: cleUnique,
-      );
-    }
   }
+}
 
   // ── Résumé mensuel ─────────────────────────────────────────────
 

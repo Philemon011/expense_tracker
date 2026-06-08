@@ -1,34 +1,37 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/operation_model.dart';
 import '../services/operation_service.dart';
 import '../services/categorie_service.dart';
 import '../services/compte_service.dart';
 import '../utils/formatters.dart';
-import 'dart:convert';
-import 'package:permission_handler/permission_handler.dart';
 
-/// Service d'export des opérations en CSV.
-///
-/// Génère un fichier CSV et le partage via les apps
-/// du téléphone (Email, WhatsApp, Drive...).
+/// Service d'export CSV des opérations.
 ///
 /// Utilisation :
-///   final service = ExportService();
-///   await service.exporterTout(devise: 'FCFA');
-///   await service.exporterParMois(mois: 6, annee: 2026, devise: 'FCFA');
+///   Step 1 — Générer le CSV :
+///     final resultat = await ExportService().generer(...)
+///
+///   Step 2a — Partager :
+///     await ExportService().partager(resultat.cheminFichier)
+///
+///   Step 2b — Sauvegarder en local :
+///     await ExportService().sauvegarderEnLocal(resultat.cheminFichier)
 class ExportService {
+
   // ── Services ───────────────────────────────────────────────────
   final _operationService = OperationService();
   final _categorieService = CategorieService();
   final _compteService = CompteService();
 
-  // ── En-têtes du CSV ────────────────────────────────────────────
+  // ── En-têtes CSV ───────────────────────────────────────────────
 
-  /// En-têtes des colonnes du fichier CSV
+  /// Colonnes du fichier CSV
   static const List<String> _entetes = [
     'Date',
     'Heure',
@@ -40,74 +43,67 @@ class ExportService {
     'Note',
   ];
 
-  // ── Export complet ─────────────────────────────────────────────
+  // ── STEP 1 : Récupérer les opérations ─────────────────────────
 
-  /// Exporte toutes les opérations en CSV.
-  Future<ResultatExport> exporterTout({
-    required String devise,
-  }) async {
-    final operations = _operationService.toutesLesOperations();
-    return _genererEtPartager(
-      operations: operations,
-      devise: devise,
-      nomFichier: 'operations_complet',
-    );
+  /// Retourne toutes les opérations.
+  List<OperationModel> toutesLesOperations() {
+    return _operationService.toutesLesOperations();
   }
 
-  /// Exporte les opérations d'un mois spécifique.
-  Future<ResultatExport> exporterParMois({
+  /// Retourne les opérations d'un mois donné.
+  List<OperationModel> operationsDuMois({
     required int mois,
     required int annee,
-    required String devise,
-  }) async {
-    final operations = _operationService.operationsParMois(
+  }) {
+    return _operationService.operationsParMois(
       mois: mois,
       annee: annee,
     );
-
-    final nomMois = Formatters.nomMois(mois).toLowerCase();
-    return _genererEtPartager(
-      operations: operations,
-      devise: devise,
-      nomFichier: 'operations_${nomMois}_$annee',
-    );
   }
 
-  /// Exporte les opérations d'une période personnalisée.
-  Future<ResultatExport> exporterParPeriode({
+  /// Retourne les opérations entre deux dates.
+  List<OperationModel> operationsParPeriode({
     required DateTime debut,
     required DateTime fin,
-    required String devise,
-  }) async {
-    final toutes = _operationService.toutesLesOperations();
-
-    // Filtrer selon la période
-    final operations = toutes.where((op) {
-      return op.date.isAfter(
-            debut.subtract(const Duration(days: 1)),
-          ) &&
-          op.date.isBefore(
-            fin.add(const Duration(days: 1)),
+  }) {
+    return _operationService
+        .toutesLesOperations()
+        .where((op) {
+          final dateOp = DateTime(
+            op.date.year,
+            op.date.month,
+            op.date.day,
           );
-    }).toList();
-
-    return _genererEtPartager(
-      operations: operations,
-      devise: devise,
-      nomFichier: 'operations_'
-          '${debut.day}-${debut.month}-${debut.year}_'
-          '${fin.day}-${fin.month}-${fin.year}',
-    );
+          final dateDebut = DateTime(
+            debut.year,
+            debut.month,
+            debut.day,
+          );
+          final dateFin = DateTime(
+            fin.year,
+            fin.month,
+            fin.day,
+          );
+          return !dateOp.isBefore(dateDebut) &&
+              !dateOp.isAfter(dateFin);
+        })
+        .toList();
   }
 
-  // ── Génération ─────────────────────────────────────────────────
+  // ── STEP 2 : Générer le fichier CSV ────────────────────────────
 
-  /// Génère le CSV et le partage.
-  Future<ResultatExport> _genererEtPartager({
+  /// Génère un fichier CSV à partir d'une liste d'opérations.
+  ///
+  /// Retourne un [ResultatExport] avec :
+  ///   - succes : true si le fichier a été créé
+  ///   - cheminFichier : chemin du fichier temporaire
+  ///   - nombreOperations : nombre de lignes exportées
+  Future<ResultatExport> generer({
     required List<OperationModel> operations,
     required String devise,
     required String nomFichier,
   }) async {
+
     // Vérifier qu'il y a des données
     if (operations.isEmpty) {
       return ResultatExport(
@@ -124,90 +120,158 @@ class ExportService {
         devise: devise,
       );
 
-      // Convertir en string CSV
+      // Convertir en texte CSV
       final csvString = const ListToCsvConverter().convert(lignes);
 
       // Sauvegarder dans un fichier temporaire
-      final fichier = await _sauvegarderFichier(
-        contenu: csvString,
-        nomFichier: nomFichier,
-      );
+      final repertoireTemp = await getTemporaryDirectory();
+      final horodatage = DateTime.now().millisecondsSinceEpoch;
+      final chemin =
+          '${repertoireTemp.path}/${nomFichier}_$horodatage.csv';
 
-      // Partager le fichier
-      await Share.shareXFiles(
-        [XFile(fichier.path)],
-        subject: 'Export opérations — $nomFichier',
-        text: 'Export de ${operations.length} opération(s) '
-            'depuis Expense Tracker',
-      );
+      final fichier = File(chemin);
+      await fichier.writeAsString(csvString, encoding: utf8);
 
-      debugPrint(
-        '✅ ExportService : ${operations.length} opérations exportées',
-      );
+      debugPrint('✅ ExportService : CSV généré → $chemin');
 
       return ResultatExport(
         succes: true,
         message: '${operations.length} opération(s) exportée(s)',
         nombreOperations: operations.length,
-        cheminFichier: fichier.path,
+        cheminFichier: chemin,
+        nomFichier: '${nomFichier}_$horodatage',
       );
+
     } catch (e) {
-      debugPrint('❌ ExportService : erreur → $e');
+      debugPrint('❌ ExportService : erreur génération → $e');
       return ResultatExport(
         succes: false,
-        message: 'Erreur lors de l\'export : $e',
+        message: 'Erreur lors de la génération',
         nombreOperations: 0,
       );
     }
   }
 
-  /// Construit la liste des lignes du CSV.
+  // ── STEP 3a : Partager ─────────────────────────────────────────
+
+  /// Partage le fichier CSV via les apps du téléphone.
   ///
-  /// Première ligne = en-têtes
-  /// Lignes suivantes = données des opérations
+  /// Ouvre le sélecteur natif (WhatsApp, Email, Drive...)
+  Future<void> partager(ResultatExport resultat) async {
+    if (resultat.cheminFichier == null) return;
+
+    await Share.shareXFiles(
+      [XFile(resultat.cheminFichier!)],
+      subject: 'Export — Expense Tracker',
+      text: '${resultat.nombreOperations} opération(s) exportée(s)',
+    );
+
+    debugPrint('✅ ExportService : fichier partagé');
+  }
+
+  // ── STEP 3b : Sauvegarder en local ────────────────────────────
+
+  /// Sauvegarde le fichier CSV dans le dossier Téléchargements.
+  ///
+  /// Android : /storage/emulated/0/Download/
+  /// Retourne le chemin final du fichier sauvegardé.
+  Future<ResultatSauvegarde> sauvegarderEnLocal(
+    ResultatExport resultat,
+  ) async {
+    if (resultat.cheminFichier == null) {
+      return ResultatSauvegarde(
+        succes: false,
+        message: 'Fichier introuvable',
+      );
+    }
+
+    try {
+      // Demander la permission si nécessaire
+      final aPermission = await _verifierPermission();
+      if (!aPermission) {
+        return ResultatSauvegarde(
+          succes: false,
+          message: 'Permission de stockage refusée.\n'
+              'Activez-la dans les paramètres de l\'app.',
+        );
+      }
+
+      // Chemin de destination dans Téléchargements
+      const cheminTelechargements =
+          '/storage/emulated/0/Download';
+      final nomFichierFinal =
+          '${resultat.nomFichier ?? 'expense_tracker'}.csv';
+      final cheminDestination =
+          '$cheminTelechargements/$nomFichierFinal';
+
+      // Copier le fichier temporaire vers Téléchargements
+      await File(resultat.cheminFichier!).copy(cheminDestination);
+
+      debugPrint(
+        '✅ ExportService : sauvegardé → $cheminDestination',
+      );
+
+      return ResultatSauvegarde(
+        succes: true,
+        message: 'Fichier sauvegardé avec succès',
+        cheminFichier: cheminDestination,
+        nomFichier: nomFichierFinal,
+      );
+
+    } catch (e) {
+      debugPrint('❌ ExportService : erreur sauvegarde → $e');
+      return ResultatSauvegarde(
+        succes: false,
+        message: 'Erreur lors de la sauvegarde',
+      );
+    }
+  }
+
+  // ── Utilitaires privés ─────────────────────────────────────────
+
+  /// Construit les lignes du CSV depuis les opérations.
   List<List<dynamic>> _construireLignes({
     required List<OperationModel> operations,
     required String devise,
   }) {
     final lignes = <List<dynamic>>[];
 
-    // ── Ligne d'en-têtes ──────────────────────────────────────
+    // Ligne 1 — En-têtes des colonnes
     lignes.add(_entetes);
 
-    // ── Lignes de données ─────────────────────────────────────
+    // Lignes suivantes — Données
     for (final op in operations) {
-      // Récupérer les noms depuis les services
       final categorie = _categorieService.categorieParId(
         op.categorieId,
       );
       final compte = _compteService.compteParId(op.compteId);
 
       lignes.add([
-        // Date — format DD/MM/YYYY
+        // Date au format JJ/MM/AAAA
         '${op.date.day.toString().padLeft(2, '0')}/'
             '${op.date.month.toString().padLeft(2, '0')}/'
             '${op.date.year}',
 
-        // Heure — format HH:MM
+        // Heure au format HH:MM
         '${op.date.hour.toString().padLeft(2, '0')}:'
             '${op.date.minute.toString().padLeft(2, '0')}',
 
         // Type — Revenu ou Dépense
         op.estEntree ? 'Revenu' : 'Dépense',
 
-        // Catégorie
+        // Nom de la catégorie
         categorie?.nom ?? 'Sans catégorie',
 
-        // Compte
+        // Nom du compte
         compte?.nom ?? 'Sans compte',
 
-        // Montant — positif pour entrée, négatif pour sortie
+        // Montant — positif si entrée, négatif si sortie
         op.estEntree ? op.montant : -op.montant,
 
         // Devise
         devise,
 
-        // Note
+        // Note libre
         op.note ?? '',
       ]);
     }
@@ -215,280 +279,101 @@ class ExportService {
     return lignes;
   }
 
-  /// Sauvegarde le contenu CSV dans un fichier temporaire.
-  Future<File> _sauvegarderFichier({
-    required String contenu,
-    required String nomFichier,
-  }) async {
-    // Répertoire temporaire de l'appareil
-    final repertoire = await getTemporaryDirectory();
-
-    // Créer le fichier avec horodatage
-    final horodatage = DateTime.now().millisecondsSinceEpoch;
-    final chemin = '${repertoire.path}/'
-        '${nomFichier}_$horodatage.csv';
-
-    final fichier = File(chemin);
-    await fichier.writeAsString(contenu, encoding: utf8);
-
-    debugPrint('✅ ExportService : fichier créé → $chemin');
-    return fichier;
-  }
-
-  // ── Statistiques export ────────────────────────────────────────
-
-  /// Retourne un résumé des données à exporter.
+  /// Vérifie et demande la permission de stockage.
   ///
-  /// Utile pour afficher un aperçu avant l'export.
-  Map<String, dynamic> apercuExport({
-    int? mois,
-    int? annee,
-  }) {
-    final operations = (mois != null && annee != null)
-        ? _operationService.operationsParMois(
-            mois: mois,
-            annee: annee,
-          )
-        : _operationService.toutesLesOperations();
+  /// Android 13+ (SDK 33+) — pas de permission nécessaire
+  /// Android < 13 — demande permission WRITE_EXTERNAL_STORAGE
+  Future<bool> _verifierPermission() async {
+    if (!Platform.isAndroid) return true;
 
-    final totalEntrees = operations
-        .where((op) => op.estEntree)
-        .fold(0.0, (sum, op) => sum + op.montant);
+    // Android 13+ — accès libre aux téléchargements
+    final sdkVersion = await _getAndroidSdkVersion();
+    if (sdkVersion >= 33) return true;
 
-    final totalSorties = operations
-        .where((op) => op.estSortie)
-        .fold(0.0, (sum, op) => sum + op.montant);
+    // Android < 13 — demander permission
+    final status = await Permission.storage.status;
+    if (status.isGranted) return true;
 
-    return {
-      'nombreOperations': operations.length,
-      'totalEntrees': totalEntrees,
-      'totalSorties': totalSorties,
-      'premièreDate': operations.isNotEmpty ? operations.last.date : null,
-      'dernièreDate': operations.isNotEmpty ? operations.first.date : null,
-    };
+    final resultat = await Permission.storage.request();
+    return resultat.isGranted;
   }
 
-  /// Sauvegarde le CSV dans le dossier Téléchargements.
-  ///
-  /// Retourne le chemin du fichier sauvegardé.
-  Future<ResultatExport> sauvegarderEnLocal({
-    required String devise,
-    int? mois,
-    int? annee,
-  }) async {
+  /// Retourne la version SDK Android.
+  Future<int> _getAndroidSdkVersion() async {
     try {
-      // ── Demander la permission ───────────────────────────────
-      final permission = await _demanderPermission();
-      if (!permission) {
-        return ResultatExport(
-          succes: false,
-          message: 'Permission de stockage refusée',
-          nombreOperations: 0,
-        );
-      }
-
-      // ── Récupérer les opérations ─────────────────────────────
-      final operations = (mois != null && annee != null)
-          ? _operationService.operationsParMois(
-              mois: mois,
-              annee: annee,
-            )
-          : _operationService.toutesLesOperations();
-
-      if (operations.isEmpty) {
-        return ResultatExport(
-          succes: false,
-          message: 'Aucune opération à exporter',
-          nombreOperations: 0,
-        );
-      }
-
-      // ── Générer le CSV ───────────────────────────────────────
-      final lignes = _construireLignes(
-        operations: operations,
-        devise: devise,
+      final result = await Process.run(
+        'getprop',
+        ['ro.build.version.sdk'],
       );
-      final csvString = const ListToCsvConverter().convert(lignes);
-
-      // ── Sauvegarder dans Téléchargements ─────────────────────
-      final chemin = await _cheminTelechargements();
-      final nomMois = (mois != null)
-          ? '_${Formatters.nomMois(mois).toLowerCase()}_$annee'
-          : '_complet';
-      final horodatage = DateTime.now().millisecondsSinceEpoch;
-      final nomFichier = 'expense_tracker$nomMois\_$horodatage.csv';
-      final cheminComplet = '$chemin/$nomFichier';
-
-      final fichier = File(cheminComplet);
-      await fichier.writeAsString(csvString, encoding: utf8);
-
-      debugPrint('✅ ExportService : sauvegardé → $cheminComplet');
-
-      return ResultatExport(
-        succes: true,
-        message: 'Fichier sauvegardé dans Téléchargements\n$nomFichier',
-        nombreOperations: operations.length,
-        cheminFichier: cheminComplet,
-      );
-    } catch (e) {
-      debugPrint('❌ ExportService : erreur sauvegarde → $e');
-      return ResultatExport(
-        succes: false,
-        message: 'Erreur lors de la sauvegarde : $e',
-        nombreOperations: 0,
-      );
-    }
-  }
-
-  /// Demande la permission de stockage selon la version Android.
-  Future<bool> _demanderPermission() async {
-    // Android 13+ — pas besoin de permission pour les téléchargements
-    if (Platform.isAndroid) {
-      final androidInfo = await _getAndroidVersion();
-      if (androidInfo >= 33) return true;
-
-      // Android < 13 — demander permission stockage
-      final status = await Permission.storage.request();
-      return status.isGranted;
-    }
-
-    // iOS — pas de permission nécessaire pour les documents
-    return true;
-  }
-
-  /// Retourne la version Android.
-  Future<int> _getAndroidVersion() async {
-    try {
-      // Lire la version depuis les propriétés système
-      final result = await Process.run('getprop', ['ro.build.version.sdk']);
-      return int.tryParse(result.stdout.toString().trim()) ?? 0;
+      return int.tryParse(
+            result.stdout.toString().trim(),
+          ) ??
+          0;
     } catch (_) {
-      return 0;
+      // En cas d'erreur — supposer Android 13+
+      return 33;
     }
   }
 
-  /// Retourne le chemin du dossier Téléchargements.
-  Future<String> _cheminTelechargements() async {
-    if (Platform.isAndroid) {
-      // Dossier Téléchargements Android
-      return '/storage/emulated/0/Download';
-    } else {
-      // iOS — dossier Documents de l'app
-      final dir = await getApplicationDocumentsDirectory();
-      return dir.path;
+  // ── Aperçu avant export ────────────────────────────────────────
+
+  /// Retourne le nombre d'opérations disponibles.
+  ///
+  /// Utilisé pour afficher un aperçu dans l'UI.
+  int nombreOperations({int? mois, int? annee}) {
+    if (mois != null && annee != null) {
+      return operationsDuMois(mois: mois, annee: annee).length;
     }
-  }
-
-
-
-
-  /// Génère le CSV et retourne le fichier temporaire.
-/// Sans partager ni sauvegarder — juste générer.
-Future<ResultatExport> generer({
-  required List<OperationModel> operations,
-  required String devise,
-  required String nomFichier,
-}) async {
-  if (operations.isEmpty) {
-    return ResultatExport(
-      succes: false,
-      message: 'Aucune opération à exporter',
-      nombreOperations: 0,
-    );
-  }
-
-  try {
-    final lignes = _construireLignes(
-      operations: operations,
-      devise: devise,
-    );
-    final csvString = const ListToCsvConverter().convert(lignes);
-    final fichier = await _sauvegarderFichier(
-      contenu: csvString,
-      nomFichier: nomFichier,
-    );
-
-    return ResultatExport(
-      succes: true,
-      message: '${operations.length} opération(s) exportée(s)',
-      nombreOperations: operations.length,
-      cheminFichier: fichier.path,
-    );
-  } catch (e) {
-    return ResultatExport(
-      succes: false,
-      message: 'Erreur lors de la génération : $e',
-      nombreOperations: 0,
-    );
+    return toutesLesOperations().length;
   }
 }
 
-/// Partage un fichier CSV déjà généré.
-Future<void> partager(String cheminFichier) async {
-  await Share.shareXFiles(
-    [XFile(cheminFichier)],
-    subject: 'Export opérations — Expense Tracker',
-    text: 'Export depuis Expense Tracker',
-  );
-}
+// ── Modèles de résultat ────────────────────────────────────────────
 
-// / Sauvegarde un fichier CSV dans les Téléchargements.
-// Future<ResultatExport> sauvegarderEnLocal(
-//   String cheminFichier,
-//   String nomFichier,
-// ) async {
-//   try {
-//     final permission = await _demanderPermission();
-//     if (!permission) {
-//       return ResultatExport(
-//         succes: false,
-//         message: 'Permission de stockage refusée',
-//         nombreOperations: 0,
-//       );
-//     }
-
-//     final cheminDest =
-//         '/storage/emulated/0/Download/$nomFichier.csv';
-
-//     // Copier le fichier temporaire vers Téléchargements
-//     await File(cheminFichier).copy(cheminDest);
-
-//     return ResultatExport(
-//       succes: true,
-//       message: 'Sauvegardé dans Téléchargements',
-//       nombreOperations: 0,
-//       cheminFichier: cheminDest,
-//     );
-//   } catch (e) {
-//     return ResultatExport(
-//       succes: false,
-//       message: 'Erreur : $e',
-//       nombreOperations: 0,
-//     );
-//   }
-// }
-}
-
-// ── Résultat d'export ──────────────────────────────────────────────
-
-/// Résultat d'une opération d'export.
+/// Résultat de la génération du CSV.
 class ResultatExport {
   const ResultatExport({
     required this.succes,
     required this.message,
     required this.nombreOperations,
     this.cheminFichier,
+    this.nomFichier,
   });
 
-  /// Vrai si l'export a réussi
+  /// Vrai si la génération a réussi
   final bool succes;
 
   /// Message de succès ou d'erreur
   final String message;
 
-  /// Nombre d'opérations exportées
+  /// Nombre d'opérations dans le CSV
   final int nombreOperations;
 
-  /// Chemin du fichier généré
+  /// Chemin du fichier temporaire généré
   final String? cheminFichier;
+
+  /// Nom du fichier sans extension
+  final String? nomFichier;
+}
+
+/// Résultat de la sauvegarde locale.
+class ResultatSauvegarde {
+  const ResultatSauvegarde({
+    required this.succes,
+    required this.message,
+    this.cheminFichier,
+    this.nomFichier,
+  });
+
+  /// Vrai si la sauvegarde a réussi
+  final bool succes;
+
+  /// Message de succès ou d'erreur
+  final String message;
+
+  /// Chemin complet du fichier sauvegardé
+  final String? cheminFichier;
+
+  /// Nom du fichier avec extension
+  final String? nomFichier;
 }

@@ -299,15 +299,16 @@ Future<bool> supprimerOperation(String id) async {
       if (Get.isRegistered<BudgetController>()) {
         Get.find<BudgetController>().rafraichir();
       }
-      // ── CORRECTION ────────────────────────────────────────
       if (Get.isRegistered<CompteController>()) {
         await Get.find<CompteController>().rafraichir();
       }
 
-      // Générer les notifications si nécessaire
-if (Get.isRegistered<NotificationController>()) {
-  Get.find<NotificationController>().verifierEtGenerer();
-}
+      // Régénérer les notifications après suppression
+      // pour nettoyer les notifications obsolètes
+      if (Get.isRegistered<NotificationController>()) {
+        await Get.find<NotificationController>()
+            .verifierEtGenerer();
+      }
     }
     return succes;
   } catch (e) {
