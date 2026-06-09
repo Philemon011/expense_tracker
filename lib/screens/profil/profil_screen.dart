@@ -22,6 +22,7 @@ import '../../models/operation_model.dart'; // ← AJOUTER
 import '../../models/budget_model.dart'; // ← AJOUTER
 import '../../utils/constantes.dart'; // ← AJOUTER
 import '../../services/export_service.dart'; // ← AJOUTER
+import 'package:url_launcher/url_launcher.dart'; // ← AJOUTER
 
 /// Écran de profil et paramètres.
 ///
@@ -154,19 +155,22 @@ class ProfilScreen extends StatelessWidget {
                 ),
               ),
 
-              // ── Dévéloppeur ──────────────────────────────────
+              // ── Développeur ──────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(
-                    AppSpacing.xs,
-                  ),
+                  padding: const EdgeInsets.all(AppSpacing.xs),
                   child: Center(
-                    child: Text(
-                      'Dévéloppeur: Etounde Philémon (+229 0160585950)',
-                      style: TextStyle(
-                        fontFamily: 'Outfit',
-                        fontSize: 12,
-                        color: AppColors.textSecondary(isDark),
+                    child: GestureDetector(
+                      onTap: () => _ouvrirWhatsApp(context),
+                      child: Text(
+                        'Développeur : Etounde Philémon',
+                        style: TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 12,
+                          color: AppColors.primary,
+                          decoration: TextDecoration.underline,
+                          decorationColor: AppColors.primary,
+                        ),
                       ),
                     ),
                   ),
@@ -182,6 +186,29 @@ class ProfilScreen extends StatelessWidget {
       );
     });
   }
+
+    /// Ouvre WhatsApp avec le numéro du développeur.
+void _ouvrirWhatsApp(BuildContext context) async {
+  // Numéro au format international sans + ni espaces
+  const numero = '2290160585950';
+  const message = 'Bonjour Philémon, '
+      'je vous contacte depuis Expense Tracker.';
+
+  final uri = Uri.parse(
+    'https://wa.me/$numero?text=${Uri.encodeComponent(message)}',
+  );
+
+  try {
+    await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+  } catch (e) {
+    context.snackbarErreur(
+      'Impossible d\'ouvrir WhatsApp',
+    );
+  }
+}
 
   // ── Dialogs ────────────────────────────────────────────────────
 
@@ -840,12 +867,10 @@ class _BottomSheetExport extends StatefulWidget {
   final bool isDark;
 
   @override
-  State<_BottomSheetExport> createState() =>
-      _BottomSheetExportState();
+  State<_BottomSheetExport> createState() => _BottomSheetExportState();
 }
 
 class _BottomSheetExportState extends State<_BottomSheetExport> {
-
   // ── Services & Controllers ────────────────────────────────────
   final _exportService = ExportService();
   final _opCtrl = Get.find<OperationController>();
@@ -870,8 +895,7 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
         left: AppSpacing.pagePaddingHorizontal,
         right: AppSpacing.pagePaddingHorizontal,
         top: AppSpacing.lg,
-        bottom: MediaQuery.of(context).viewInsets.bottom +
-            AppSpacing.xxxl,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xxxl,
       ),
       decoration: BoxDecoration(
         color: AppColors.card(isDark),
@@ -884,7 +908,6 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           // ── Handle ─────────────────────────────────────────
           Center(
             child: Container(
@@ -934,8 +957,7 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
             isDark: isDark,
             estEnChargement: _estEnChargement,
             onTap: () async {
-              final operations =
-                  _exportService.toutesLesOperations();
+              final operations = _exportService.toutesLesOperations();
               await _lancerExport(
                 context: context,
                 operations: operations,
@@ -963,8 +985,7 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
               await _lancerExport(
                 context: context,
                 operations: operations,
-                nomFichier:
-                    'expense_tracker_'
+                nomFichier: 'expense_tracker_'
                     '${Formatters.nomMois(now.month).toLowerCase()}'
                     '_${now.year}',
               );
@@ -1167,7 +1188,6 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-
             // Nombre d'opérations
             Text(
               '${resultat.nombreOperations} opération(s) '
@@ -1205,8 +1225,7 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
               isDark: isDark,
               onTap: () async {
                 Get.back();
-                final sauvegarde =
-                    await _exportService.sauvegarderEnLocal(
+                final sauvegarde = await _exportService.sauvegarderEnLocal(
                   resultat,
                 );
                 if (sauvegarde.succes) {
@@ -1275,7 +1294,6 @@ class _BottomSheetExportState extends State<_BottomSheetExport> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             Text(
               'Votre fichier CSV a été sauvegardé dans :',
               style: TextStyle(
@@ -1403,7 +1421,6 @@ class _OptionExport extends StatelessWidget {
           ),
           child: Row(
             children: [
-
               // Icône
               Container(
                 width: 44,
@@ -1466,6 +1483,8 @@ class _OptionExport extends StatelessWidget {
       ),
     );
   }
+
+
 }
 
 // ── Bouton action dialog ───────────────────────────────────────────
@@ -1505,7 +1524,6 @@ class _BoutonAction extends StatelessWidget {
         ),
         child: Row(
           children: [
-
             // Icône
             Container(
               width: 40,
